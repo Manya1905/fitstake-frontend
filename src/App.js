@@ -22,29 +22,32 @@ function App() {
   const [succeeded, setSucceeded] = useState(true);
 
   const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
-        });
-        setAccount(accounts[0]);
-        
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const fitStakeContract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          FitStakeABI.abi,
-          signer
-        );
-        setContract(fitStakeContract);
-      } catch (error) {
-        console.error('Error connecting wallet:', error);
-        alert('Failed to connect wallet');
-      }
-    } else {
-      alert('Please install MetaMask!');
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      setAccount(accounts[0]);
+      
+      // Use Alchemy public RPC instead
+      const provider = new ethers.providers.JsonRpcProvider(
+        'https://eth-sepolia.g.alchemy.com/v2/demo'
+      );
+      const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
+      const fitStakeContract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        FitStakeABI.abi,
+        signer
+      );
+      setContract(fitStakeContract);
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      alert('Failed to connect wallet');
     }
-  };
+  } else {
+    alert('Please install MetaMask!');
+  }
+};
 
   const loadChallenges = useCallback(async () => {
     if (!contract) return;
