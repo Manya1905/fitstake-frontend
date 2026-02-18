@@ -12,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showProofModal, setShowProofModal] = useState(null);
+  const [error, setError] = useState('');
   
   // Form state
   const [goal, setGoal] = useState('');
@@ -46,36 +47,38 @@ function App() {
   };
 
   const loadChallenges = useCallback(async () => {
-  if (!contract) return;
-  
-  setLoading(true);
-  try {
-    const count = await contract.challengeCount();
-    const challengeList = [];
+    if (!contract) return;
     
-    for (let i = 1; i <= count.toNumber(); i++) {
-      const challenge = await contract.getChallenge(i);
-      const hasJoined = await contract.hasJoinedChallenge(i, account);
+    setLoading(true);
+    setError('');
+    try {
+      const count = await contract.challengeCount();
+      const challengeList = [];
       
-      challengeList.push({
-        id: challenge.id.toNumber(),
-        creator: challenge.creator,
-        goal: challenge.goal,
-        deadline: new Date(challenge.deadline.toNumber() * 1000),
-        deadlineTimestamp: challenge.deadline.toNumber(),
-        stakeAmount: ethers.utils.formatEther(challenge.stakeAmount),
-        participantCount: challenge.participantCount.toNumber(),
-        totalStaked: ethers.utils.formatEther(challenge.totalStaked),
-        isDistributed: challenge.isDistributed,
-        hasJoined: hasJoined
-      });
+      for (let i = 1; i <= count.toNumber(); i++) {
+        const challenge = await contract.getChallenge(i);
+        const hasJoined = await contract.hasJoinedChallenge(i, account);
+        
+        challengeList.push({
+          id: challenge.id.toNumber(),
+          creator: challenge.creator,
+          goal: challenge.goal,
+          deadline: new Date(challenge.deadline.toNumber() * 1000),
+          deadlineTimestamp: challenge.deadline.toNumber(),
+          stakeAmount: ethers.utils.formatEther(challenge.stakeAmount),
+          participantCount: challenge.participantCount.toNumber(),
+          totalStaked: ethers.utils.formatEther(challenge.totalStaked),
+          isDistributed: challenge.isDistributed,
+          hasJoined: hasJoined
+        });
+      }
+      
+      setChallenges(challengeList);
+    } catch (error) {
+      console.error('Error loading challenges:', error);
+      setError('Error loading: ' + error.message);
     }
-    
-    setChallenges(challengeList);
-  } catch (error) {
-    console.error('Error loading challenges:', error);
-  }
-  setLoading(false);
+    setLoading(false);
   }, [contract, account]);
 
   const createChallenge = async (e) => {
@@ -173,11 +176,10 @@ function App() {
   };
 
   useEffect(() => {
-  if (contract && account) {
-    loadChallenges();
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contract, account]);
+    if (contract && account) {
+      loadChallenges();
+    }
+  }, [contract, account, loadChallenges]);
 
   return (
     <div className="App">
@@ -253,6 +255,8 @@ function App() {
           
           {loading && !showCreateForm ? (
             <p>Loading challenges...</p>
+          ) : error ? (
+            <p style={{color: 'red', background: 'white', padding: '1rem', borderRadius: '10px'}}>{error}</p>
           ) : challenges.length === 0 ? (
             <p>No challenges yet. Create one to get started!</p>
           ) : (
