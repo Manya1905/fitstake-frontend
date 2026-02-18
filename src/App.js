@@ -202,8 +202,13 @@ const disconnectWallet = () => {
             Connect MetaMask
           </button>
         ) : (
-          <div className="account-info">
-            Connected: {account.slice(0, 6)}...{account.slice(-4)}
+          <div className="header-buttons">
+            <div className="account-info">
+              Connected: {account.slice(0, 6)}...{account.slice(-4)}
+            </div>
+            <button onClick={disconnectWallet} className="connect-btn">
+              Disconnect
+            </button>
           </div>
         )}
       </header>
