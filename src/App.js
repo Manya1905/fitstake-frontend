@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import FitStakeABI from './FitStake.json';
 import './App.css';
@@ -45,38 +45,38 @@ function App() {
     }
   };
 
-  const loadChallenges = async () => {
-    if (!contract) return;
+  const loadChallenges = useCallback(async () => {
+  if (!contract) return;
+  
+  setLoading(true);
+  try {
+    const count = await contract.challengeCount();
+    const challengeList = [];
     
-    setLoading(true);
-    try {
-      const count = await contract.challengeCount();
-      const challengeList = [];
+    for (let i = 1; i <= count.toNumber(); i++) {
+      const challenge = await contract.getChallenge(i);
+      const hasJoined = await contract.hasJoinedChallenge(i, account);
       
-      for (let i = 1; i <= count.toNumber(); i++) {
-        const challenge = await contract.getChallenge(i);
-        const hasJoined = await contract.hasJoinedChallenge(i, account);
-        
-        challengeList.push({
-          id: challenge.id.toNumber(),
-          creator: challenge.creator,
-          goal: challenge.goal,
-          deadline: new Date(challenge.deadline.toNumber() * 1000),
-          deadlineTimestamp: challenge.deadline.toNumber(),
-          stakeAmount: ethers.utils.formatEther(challenge.stakeAmount),
-          participantCount: challenge.participantCount.toNumber(),
-          totalStaked: ethers.utils.formatEther(challenge.totalStaked),
-          isDistributed: challenge.isDistributed,
-          hasJoined: hasJoined
-        });
-      }
-      
-      setChallenges(challengeList);
-    } catch (error) {
-      console.error('Error loading challenges:', error);
+      challengeList.push({
+        id: challenge.id.toNumber(),
+        creator: challenge.creator,
+        goal: challenge.goal,
+        deadline: new Date(challenge.deadline.toNumber() * 1000),
+        deadlineTimestamp: challenge.deadline.toNumber(),
+        stakeAmount: ethers.utils.formatEther(challenge.stakeAmount),
+        participantCount: challenge.participantCount.toNumber(),
+        totalStaked: ethers.utils.formatEther(challenge.totalStaked),
+        isDistributed: challenge.isDistributed,
+        hasJoined: hasJoined
+      });
     }
-    setLoading(false);
-  };
+    
+    setChallenges(challengeList);
+  } catch (error) {
+    console.error('Error loading challenges:', error);
+  }
+  setLoading(false);
+  }, [contract, account]);
 
   const createChallenge = async (e) => {
     e.preventDefault();
