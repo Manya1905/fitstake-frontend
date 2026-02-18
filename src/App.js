@@ -173,9 +173,10 @@ function App() {
   };
 
   useEffect(() => {
-    if (contract) {
-      loadChallenges();
-    }
+  if (contract && account) {
+    loadChallenges();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contract, account]);
 
   return (
