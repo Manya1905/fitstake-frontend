@@ -49,6 +49,13 @@ function App() {
   }
 };
 
+const disconnectWallet = () => {
+  setAccount('');
+  setContract(null);
+  setChallenges([]);
+  setError('');
+};
+
   const loadChallenges = useCallback(async () => {
     if (!contract) return;
     
