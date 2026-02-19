@@ -24,21 +24,37 @@ function App() {
   const connectWallet = async () => {
   if (window.ethereum) {
     try {
+      // Request accounts
       const accounts = await window.ethereum.request({ 
         method: 'eth_requestAccounts' 
       });
       setAccount(accounts[0]);
       
-      // Create provider from window.ethereum FIRST
+      // Check network FIRST
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      console.log('Current chain:', chainId);
+      
+      // Force switch to Sepolia if not on it
+      const sepoliaChainId = '0xaa36a7'; // 11155111 in hex
+      if (chainId !== sepoliaChainId) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: sepoliaChainId }],
+          });
+        } catch (switchError) {
+          alert('Please switch to Sepolia network in MetaMask');
+          return;
+        }
+      }
+      
+      // Create provider AFTER network confirmed
       const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      const network = await web3Provider.getNetwork();
+      console.log('Connected to network:', network.chainId);
       
-      // Wait for network to be ready
-      await web3Provider.ready;
-      
-      // Get signer
+      // Create contract
       const signer = web3Provider.getSigner();
-      
-      // Create contract with signer
       const fitStakeContract = new ethers.Contract(
         CONTRACT_ADDRESS,
         FitStakeABI.abi,
@@ -47,19 +63,10 @@ function App() {
       
       setContract(fitStakeContract);
       
-      // Force immediate load after contract is set
-      setTimeout(async () => {
-        try {
-          const count = await fitStakeContract.challengeCount();
-          console.log('Challenge count:', count.toNumber());
-        } catch (e) {
-          console.error('Contract not ready:', e);
-        }
-      }, 1000);
-      
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      alert('Failed to connect wallet: ' + error.message);
+      setError('Connection failed: ' + error.message);
+      alert('Failed to connect: ' + error.message);
     }
   } else {
     alert('Please install MetaMask!');
