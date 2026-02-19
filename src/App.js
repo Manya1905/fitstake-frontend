@@ -29,25 +29,42 @@ function App() {
       });
       setAccount(accounts[0]);
       
-      // Use Alchemy public RPC instead
-      const provider = new ethers.providers.JsonRpcProvider(
-        'https://eth-sepolia.g.alchemy.com/v2/demo'
-      );
-      const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
+      // Create provider from window.ethereum FIRST
+      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      
+      // Wait for network to be ready
+      await web3Provider.ready;
+      
+      // Get signer
+      const signer = web3Provider.getSigner();
+      
+      // Create contract with signer
       const fitStakeContract = new ethers.Contract(
         CONTRACT_ADDRESS,
         FitStakeABI.abi,
         signer
       );
+      
       setContract(fitStakeContract);
+      
+      // Force immediate load after contract is set
+      setTimeout(async () => {
+        try {
+          const count = await fitStakeContract.challengeCount();
+          console.log('Challenge count:', count.toNumber());
+        } catch (e) {
+          console.error('Contract not ready:', e);
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      alert('Failed to connect wallet');
+      alert('Failed to connect wallet: ' + error.message);
     }
   } else {
     alert('Please install MetaMask!');
   }
-};
+  };
 
 const disconnectWallet = () => {
   setAccount('');
