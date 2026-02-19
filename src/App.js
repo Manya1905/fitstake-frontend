@@ -107,6 +107,16 @@ const disconnectWallet = () => {
         });
       }
       
+      // Sort: Active challenges first (by deadline descending), then completed
+      challengeList.sort((a, b) => {
+        // Both active or both completed - sort by newest first
+        if (a.isDistributed === b.isDistributed) {
+          return b.id - a.id; // Newest first
+        }
+        // Active challenges come before completed
+        return a.isDistributed ? 1 : -1;
+      });
+
       setChallenges(challengeList);
     } catch (error) {
       console.error('Error loading challenges:', error);
