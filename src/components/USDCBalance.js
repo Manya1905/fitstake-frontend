@@ -16,7 +16,7 @@ function USDCBalance({ usdcContract, address }) {
 
   useEffect(() => {
     fetchBalance();
-    const interval = setInterval(fetchBalance, 15000); // Poll every 15s
+    const interval = setInterval(fetchBalance, 30000); // Poll every 30s
     return () => clearInterval(interval);
   }, [fetchBalance]);
 
