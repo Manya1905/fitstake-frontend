@@ -1,9 +1,9 @@
 import { parseAbi } from 'viem';
 import abi from './abi.json';
 
-// Contract addresses
-export const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || '';
-export const USDC_ADDRESS = process.env.REACT_APP_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+// Contract addresses (Base Sepolia)
+export const CONTRACT_ADDRESS = '0x920082097e3E0b6F449fdC2225c4a8E3492b6F7C';
+export const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
 
 // Backend URL
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
