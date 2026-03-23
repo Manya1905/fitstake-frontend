@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI } from '../utils/constants';
+import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI, BASE_SEPOLIA } from '../utils/constants';
+
+// Public RPC provider for read-only contract calls (always Base Sepolia)
+const PUBLIC_RPC = BASE_SEPOLIA.rpcUrls.default.http[0];
 
 export function useContract() {
   const { ready, authenticated, user } = usePrivy();
@@ -25,9 +28,9 @@ export function useContract() {
     if (!wallets || wallets.length === 0) return;
 
     try {
-      const wallet = wallets[0];
-      console.log('useContract: wallet found', wallet.address);
-      console.log('useContract: wallet methods', Object.keys(wallet).join(', '));
+      // Prefer Privy embedded wallet over browser extension wallets
+      const wallet = wallets.find(w => w.walletClientType === 'privy') || wallets[0];
+      console.log('useContract: wallet found', wallet.address, 'type:', wallet.walletClientType);
 
       // Switch to Base Sepolia
       try {
@@ -37,31 +40,26 @@ export function useContract() {
         console.warn('useContract: chain switch error', switchErr.message);
       }
 
-      // Privy v3: getEthereumProvider() returns raw EIP-1193 provider
-      const eip1193Provider = await wallet.getEthereumProvider();
-      console.log('useContract: got EIP-1193 provider');
-
-      // Wrap with ethers v5 Web3Provider
-      const web3Provider = new ethers.providers.Web3Provider(eip1193Provider);
-      const web3Signer = web3Provider.getSigner();
       const walletAddress = wallet.address;
 
-      console.log('useContract: creating contracts at', CONTRACT_ADDRESS, 'for wallet', walletAddress);
+      // Use public RPC for read-only contract (guaranteed Base Sepolia)
+      const readProvider = new ethers.providers.JsonRpcProvider(PUBLIC_RPC);
+      console.log('useContract: using public RPC for reads:', PUBLIC_RPC);
 
       const fitStakeContract = new ethers.Contract(
         CONTRACT_ADDRESS,
         FITSTAKE_ABI,
-        web3Signer
+        readProvider
       );
 
       const usdcContractInstance = new ethers.Contract(
         USDC_ADDRESS,
         USDC_ABI,
-        web3Signer
+        readProvider
       );
 
-      setProvider(web3Provider);
-      setSigner(web3Signer);
+      setProvider(readProvider);
+      setSigner(null);
       setContract(fitStakeContract);
       setUsdcContract(usdcContractInstance);
       setAddress(walletAddress);
