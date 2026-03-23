@@ -21,7 +21,13 @@ root.render(
         appearance: {
           theme: 'light',
           accentColor: '#b2dfdb',
+          loginMessage: 'Sign in to FitStake',
         },
+        // Use redirect instead of popup for OAuth — popups are blocked in PWA standalone mode
+        loginMethodsAndOrder: {
+          primary: ['email', 'google'],
+        },
+        oauthRedirectMode: 'redirect',
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
         },
