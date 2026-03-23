@@ -1,7 +1,7 @@
 import React from 'react';
 import ChallengeCard from './ChallengeCard';
 
-function ChallengeList({ challenges, loading, onJoin, onSubmitProof, onVote, onDistribute }) {
+function ChallengeList({ challenges, loading, onJoin, onSubmitProof, onVote, onDistribute, onViewDetail, onRequestToJoin }) {
   if (loading) {
     return <p className="loading-text">Loading challenges...</p>;
   }
@@ -20,6 +20,8 @@ function ChallengeList({ challenges, loading, onJoin, onSubmitProof, onVote, onD
           onSubmitProof={onSubmitProof}
           onVote={onVote}
           onDistribute={onDistribute}
+          onViewDetail={onViewDetail}
+          onRequestToJoin={onRequestToJoin}
           loading={loading}
         />
       ))}

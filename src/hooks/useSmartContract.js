@@ -14,7 +14,7 @@ export function useSmartContract() {
   const smartWalletAddress = smartWallet?.address || '';
 
   // Batch: approve USDC + create challenge in one atomic tx
-  const approveAndCreateChallenge = async (stakeAmount, goal, joinDeadlineTs, deadlineTs, proofWindowHours, voteWindowHours, graceHours) => {
+  const approveAndCreateChallenge = async (stakeAmount, goal, joinDeadlineTs, deadlineTs, proofWindowHours, voteWindowHours, graceHours, isPrivate = false, inviteCodeHash = '0x0000000000000000000000000000000000000000000000000000000000000000') => {
     if (!client) throw new Error('Smart wallet not ready');
 
     const txHash = await client.sendTransaction({
@@ -33,7 +33,7 @@ export function useSmartContract() {
             abi: FITSTAKE_ABI,
             functionName: 'createChallenge',
             // eslint-disable-next-line no-undef
-            args: [goal, BigInt(joinDeadlineTs), BigInt(deadlineTs), stakeAmount, BigInt(proofWindowHours), BigInt(voteWindowHours), BigInt(graceHours)],
+            args: [goal, BigInt(joinDeadlineTs), BigInt(deadlineTs), stakeAmount, BigInt(proofWindowHours), BigInt(voteWindowHours), BigInt(graceHours), isPrivate, inviteCodeHash],
           }),
         },
       ],
@@ -117,6 +117,82 @@ export function useSmartContract() {
     return txHash;
   };
 
+  // Single tx: request to join private challenge
+  const requestToJoin = async (challengeId) => {
+    if (!client) throw new Error('Smart wallet not ready');
+
+    const txHash = await client.sendTransaction({
+      to: CONTRACT_ADDRESS,
+      data: encodeFunctionData({
+        abi: FITSTAKE_ABI,
+        functionName: 'requestToJoin',
+        // eslint-disable-next-line no-undef
+        args: [BigInt(challengeId)],
+      }),
+    });
+    return txHash;
+  };
+
+  // Single tx: approve join request (creator only)
+  const approveJoinRequest = async (challengeId, userAddress) => {
+    if (!client) throw new Error('Smart wallet not ready');
+
+    const txHash = await client.sendTransaction({
+      to: CONTRACT_ADDRESS,
+      data: encodeFunctionData({
+        abi: FITSTAKE_ABI,
+        functionName: 'approveJoinRequest',
+        // eslint-disable-next-line no-undef
+        args: [BigInt(challengeId), userAddress],
+      }),
+    });
+    return txHash;
+  };
+
+  // Single tx: reject join request (creator only)
+  const rejectJoinRequest = async (challengeId, userAddress) => {
+    if (!client) throw new Error('Smart wallet not ready');
+
+    const txHash = await client.sendTransaction({
+      to: CONTRACT_ADDRESS,
+      data: encodeFunctionData({
+        abi: FITSTAKE_ABI,
+        functionName: 'rejectJoinRequest',
+        // eslint-disable-next-line no-undef
+        args: [BigInt(challengeId), userAddress],
+      }),
+    });
+    return txHash;
+  };
+
+  // Batch: approve USDC + join with invite code in one atomic tx
+  const approveAndJoinWithInviteCode = async (challengeId, inviteCode, stakeAmount) => {
+    if (!client) throw new Error('Smart wallet not ready');
+
+    const txHash = await client.sendTransaction({
+      calls: [
+        {
+          to: USDC_ADDRESS,
+          data: encodeFunctionData({
+            abi: USDC_ABI_VIEM,
+            functionName: 'approve',
+            args: [CONTRACT_ADDRESS, stakeAmount],
+          }),
+        },
+        {
+          to: CONTRACT_ADDRESS,
+          data: encodeFunctionData({
+            abi: FITSTAKE_ABI,
+            functionName: 'joinWithInviteCode',
+            // eslint-disable-next-line no-undef
+            args: [BigInt(challengeId), inviteCode],
+          }),
+        },
+      ],
+    });
+    return txHash;
+  };
+
   return {
     client,
     smartWalletAddress,
@@ -125,5 +201,9 @@ export function useSmartContract() {
     submitProof,
     castVotes,
     distributeRewards,
+    requestToJoin,
+    approveJoinRequest,
+    rejectJoinRequest,
+    approveAndJoinWithInviteCode,
   };
 }

@@ -2,7 +2,7 @@ import { parseAbi } from 'viem';
 import abi from './abi.json';
 
 // Contract addresses (Base Sepolia)
-export const CONTRACT_ADDRESS = '0x920082097e3E0b6F449fdC2225c4a8E3492b6F7C';
+export const CONTRACT_ADDRESS = '0x952B11d34907e2cF17896Cd349E1D9927FE67914';
 export const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
 
 // Backend URL

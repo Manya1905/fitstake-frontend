@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useCloudinary } from '../hooks/useCloudinary';
-import { BACKEND_URL } from '../utils/constants';
+import { BACKEND_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../utils/constants';
+
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, onSubmitted }) {
   const [proofText, setProofText] = useState('');
@@ -9,8 +11,10 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
   const [mediaType, setMediaType] = useState(''); // 'image' or 'video'
   const [fitnessData, setFitnessData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [fetchingFitness, setFetchingFitness] = useState(false);
   const { upload, isConfigured } = useCloudinary();
+  const fileInputRef = useRef(null);
 
   // Fetch fitness data when modal opens
   useEffect(() => {
@@ -49,7 +53,51 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
     }
   }, [fitnessHook, challenge]);
 
+  const handleNativeFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      toast.error('Cloudinary not configured');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+      const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+        { method: 'POST', body: formData }
+      );
+      const data = await res.json();
+
+      if (data.secure_url) {
+        setMediaUrl(data.secure_url);
+        setMediaType(data.resource_type);
+        toast.success(`${data.resource_type === 'video' ? 'Video' : 'Screenshot'} uploaded!`);
+      } else {
+        throw new Error(data.error?.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Upload failed: ' + error.message);
+    }
+    setUploading(false);
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleMediaUpload = async () => {
+    if (isMobile) {
+      // On mobile, trigger native file picker
+      fileInputRef.current?.click();
+      return;
+    }
+
     if (isConfigured) {
       try {
         const result = await upload('auto');
@@ -138,12 +186,20 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
 
         {/* Media upload (screenshot or video) */}
         <div className="screenshot-section">
+          <input
+            type="file"
+            accept="image/*,video/*"
+            ref={fileInputRef}
+            onChange={handleNativeFileUpload}
+            style={{ display: 'none' }}
+          />
           <button
             onClick={handleMediaUpload}
             className="screenshot-btn"
             type="button"
+            disabled={uploading}
           >
-            Upload Screenshot or Video
+            {uploading ? 'Uploading...' : 'Upload Screenshot or Video'}
           </button>
           {mediaUrl && (
             <div className="screenshot-preview">

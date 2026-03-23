@@ -7,6 +7,8 @@ function ChallengeCard({
   onSubmitProof,
   onVote,
   onDistribute,
+  onViewDetail,
+  onRequestToJoin,
   loading,
 }) {
   const phase = challenge.phase;
@@ -51,13 +53,29 @@ function ChallengeCard({
 
   const activeDeadline = getActiveDeadline();
 
+  const handleCardClick = (e) => {
+    // Don't trigger if clicking a button
+    if (e.target.closest('button')) return;
+    if (onViewDetail) onViewDetail(challenge);
+  };
+
   return (
-    <div className="challenge-card">
+    <div
+      className="challenge-card clickable-card"
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+    >
       <div className="card-header">
         <h3>{challenge.goal}</h3>
-        <span className="phase-badge" style={{ backgroundColor: phaseColor }}>
-          {phaseLabel}
-        </span>
+        <div className="card-badges">
+          {challenge.isPrivate && (
+            <span className="private-badge">Private</span>
+          )}
+          <span className="phase-badge" style={{ backgroundColor: phaseColor }}>
+            {phaseLabel}
+          </span>
+        </div>
       </div>
 
       <div className="card-details">
@@ -74,8 +92,8 @@ function ChallengeCard({
       )}
 
       <div className="card-actions">
-        {/* Join button: during Joining phase, not yet joined */}
-        {phase === Phase.Joining && !challenge.hasJoined && (
+        {/* Public challenge join button */}
+        {phase === Phase.Joining && !challenge.hasJoined && !challenge.isPrivate && (
           <button
             onClick={() => onJoin(challenge.id, challenge.stakeAmount)}
             disabled={loading}
@@ -85,8 +103,46 @@ function ChallengeCard({
           </button>
         )}
 
-        {/* Submit Proof button: during ProofSubmission phase, joined, not submitted */}
-        {phase === Phase.ProofSubmission &&
+        {/* Private challenge: request to join / pending / approved */}
+        {phase === Phase.Joining && !challenge.hasJoined && challenge.isPrivate && (
+          <>
+            {!challenge.hasRequested && !challenge.isApproved && (
+              <button
+                onClick={() => onRequestToJoin(challenge.id)}
+                disabled={loading}
+                className="join-btn request-btn"
+              >
+                Request to Join
+              </button>
+            )}
+            {challenge.hasRequested && !challenge.isApproved && (
+              <button disabled className="join-btn pending-request-btn">
+                Request Pending
+              </button>
+            )}
+            {challenge.isApproved && (
+              <button
+                onClick={() => onJoin(challenge.id, challenge.stakeAmount)}
+                disabled={loading}
+                className="join-btn"
+              >
+                Join Challenge
+              </button>
+            )}
+            {challenge.hasInviteCode && !challenge.isApproved && (
+              <button
+                onClick={() => onViewDetail(challenge)}
+                disabled={loading}
+                className="join-btn code-btn"
+              >
+                Join with Code
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Submit Proof button: during Active or ProofSubmission phase, joined, not submitted */}
+        {(phase === Phase.Active || phase === Phase.ProofSubmission) &&
           challenge.hasJoined &&
           !challenge.hasSubmitted && (
             <button

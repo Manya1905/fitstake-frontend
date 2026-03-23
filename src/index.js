@@ -6,6 +6,7 @@ import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 import App from './App';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 window.Buffer = Buffer;
 
@@ -80,3 +81,5 @@ root.render(
     </PrivyProvider>
   </React.StrictMode>
 );
+
+serviceWorkerRegistration.register();

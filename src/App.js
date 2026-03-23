@@ -9,6 +9,7 @@ import ChallengeList from './components/ChallengeList';
 import CreateChallengeForm from './components/CreateChallengeForm';
 import ProofSubmissionModal from './components/ProofSubmissionModal';
 import VotingModal from './components/VotingModal';
+import ChallengeDetailModal from './components/ChallengeDetailModal';
 import FundWallet from './components/FundWallet';
 import './App.css';
 
@@ -21,6 +22,10 @@ function App() {
     distributeRewards: smartDistributeRewards,
     submitProof: smartSubmitProof,
     castVotes: smartCastVotes,
+    requestToJoin: smartRequestToJoin,
+    approveJoinRequest: smartApproveJoinRequest,
+    rejectJoinRequest: smartRejectJoinRequest,
+    approveAndJoinWithInviteCode: smartJoinWithInviteCode,
   } = useSmartContract();
   const fitnessHook = useFitness();
 
@@ -29,8 +34,8 @@ function App() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [proofChallenge, setProofChallenge] = useState(null);
   const [voteChallenge, setVoteChallenge] = useState(null);
+  const [detailChallenge, setDetailChallenge] = useState(null);
   const [showFundWallet, setShowFundWallet] = useState(false);
-
   const loadChallenges = useCallback(async () => {
     if (!contract || !address) return;
 
@@ -45,6 +50,17 @@ function App() {
         const hasJoined = await contract.hasJoinedChallenge(i, address);
         const hasSubmitted = await contract.hasSubmittedProof(i, address);
         const hasVoted = await contract.hasVotedAtAll(i, address);
+
+        // Load privacy info
+        const [isPrivate, hasInviteCode] = await contract.getChallengePrivacy(i);
+
+        // Load join request status for private challenges
+        let hasRequested = false;
+        let isApproved = false;
+        if (isPrivate) {
+          hasRequested = await contract.hasRequestedToJoin(i, address);
+          isApproved = await contract.isApprovedToJoin(i, address);
+        }
 
         challengeList.push({
           id: Number(c.id),
@@ -63,6 +79,10 @@ function App() {
           hasJoined,
           hasSubmitted,
           hasVoted,
+          isPrivate,
+          hasInviteCode,
+          hasRequested,
+          isApproved,
         });
       }
 
@@ -118,6 +138,22 @@ function App() {
     setLoading(false);
   };
 
+  const handleRequestToJoin = async (challengeId) => {
+    try {
+      setLoading(true);
+      toast.loading('Requesting to join...', { id: 'request' });
+
+      await smartRequestToJoin(challengeId);
+
+      toast.success('Request sent! Waiting for creator approval.', { id: 'request' });
+      await loadChallenges();
+    } catch (error) {
+      console.error('Error requesting to join:', error);
+      toast.error('Failed: ' + (error.reason || error.message), { id: 'request' });
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="App">
       <Header
@@ -151,8 +187,16 @@ function App() {
           {showCreateForm && (
             <CreateChallengeForm
               onCreateChallenge={approveAndCreateChallenge}
-              onCreated={() => {
+              onCreated={async (inviteCode) => {
                 setShowCreateForm(false);
+                if (inviteCode && contract) {
+                  try {
+                    const count = await contract.challengeCount();
+                    localStorage.setItem(`fitstake_invite_${Number(count)}`, inviteCode);
+                  } catch (err) {
+                    console.error('Failed to store invite code:', err);
+                  }
+                }
                 loadChallenges();
               }}
               onCancel={() => setShowCreateForm(false)}
@@ -166,6 +210,8 @@ function App() {
             onSubmitProof={(challenge) => setProofChallenge(challenge)}
             onVote={(challenge) => setVoteChallenge(challenge)}
             onDistribute={handleDistribute}
+            onViewDetail={(challenge) => setDetailChallenge(challenge)}
+            onRequestToJoin={handleRequestToJoin}
           />
 
           {proofChallenge && (
@@ -192,6 +238,19 @@ function App() {
                 setVoteChallenge(null);
                 loadChallenges();
               }}
+            />
+          )}
+
+          {detailChallenge && (
+            <ChallengeDetailModal
+              challenge={detailChallenge}
+              contract={contract}
+              address={address}
+              onClose={() => setDetailChallenge(null)}
+              onApproveRequest={smartApproveJoinRequest}
+              onRejectRequest={smartRejectJoinRequest}
+              onJoinWithCode={smartJoinWithInviteCode}
+              onRefresh={loadChallenges}
             />
           )}
         </main>
