@@ -21,5 +21,20 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <div id="debug-log" style="position:fixed;bottom:0;left:0;right:0;max-height:30vh;overflow:auto;background:black;color:lime;font-size:11px;padding:8px;z-index:99999;display:none;font-family:monospace;"></div>
+    <script>
+      var dbg = document.getElementById('debug-log');
+      function dlog(msg) { dbg.style.display='block'; dbg.innerHTML += msg + '<br>'; dbg.scrollTop=dbg.scrollHeight; }
+      window.onerror = function(m,s,l,c,e) { dlog('ERR: '+m+' ('+s+':'+l+')'); };
+      window.addEventListener('unhandledrejection', function(e) { dlog('REJECT: '+(e.reason&&e.reason.message||e.reason||'unknown')); });
+      var origFetch = window.fetch;
+      window.fetch = function() {
+        var url = arguments[0] && arguments[0].url ? arguments[0].url : String(arguments[0]);
+        return origFetch.apply(this, arguments).then(function(r) {
+          if (!r.ok) dlog('FETCH FAIL ' + r.status + ': ' + url.substring(0,80));
+          return r;
+        }).catch(function(e) { dlog('FETCH ERR: ' + url.substring(0,80) + ' - ' + e.message); throw e; });
+      };
+    </script>
   </body>
 </html>
