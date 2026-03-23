@@ -51,11 +51,21 @@ function ProofViewerPanel({
     if (!contract) return;
     setLoading(true);
     try {
-      console.log('ProofViewerPanel: loading challenge id=', challenge.id, 'type=', typeof challenge.id, 'contract=', contract.address);
-      const network = await contract.provider.getNetwork();
-      console.log('ProofViewerPanel: connected to chain', network.chainId);
       const addrs = await contract.getParticipants(challenge.id);
-      console.log('ProofViewerPanel: got', addrs.length, 'participants');
+
+      // Fetch emails for all participants
+      let emailMap = {};
+      try {
+        const emailRes = await fetch(`${BACKEND_URL}/api/users/lookup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addresses: [...addrs] }),
+        });
+        const emailData = await emailRes.json();
+        emailMap = emailData.users || {};
+      } catch (err) {
+        console.error('Error fetching user emails:', err);
+      }
 
       // Fetch backend votes for this user
       let backendVotes = {};
@@ -112,9 +122,12 @@ function ProofViewerPanel({
           localV[addrLower] = backendVotes[addrLower];
         }
 
+        const email = emailMap[addr.toLowerCase()] || null;
+
         participantData.push({
           address: addr,
-          displayAddress: `${addr.slice(0, 6)}...${addr.slice(-4)}`,
+          displayAddress: email || `${addr.slice(0, 6)}...${addr.slice(-4)}`,
+          email,
           isCurrentUser,
           isCreator,
           hasSubmitted,
@@ -405,7 +418,7 @@ function ProofViewerPanel({
                       className="roster-avatar"
                       style={{ backgroundColor: getAvatarColor(p.address) }}
                     >
-                      {getInitials(p.address)}
+                      {getInitials(p.address, p.email)}
                     </div>
 
                     <div className="roster-info">
@@ -466,7 +479,7 @@ function ProofViewerPanel({
                 className="roster-avatar"
                 style={{ backgroundColor: getAvatarColor(selectedParticipant.address) }}
               >
-                {getInitials(selectedParticipant.address)}
+                {getInitials(selectedParticipant.address, selectedParticipant.email)}
               </div>
               <div>
                 <span className="roster-address">{selectedParticipant.displayAddress}</span>

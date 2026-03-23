@@ -11,6 +11,10 @@ export function getAvatarColor(address) {
   return PALETTE[Math.abs(hash) % PALETTE.length];
 }
 
-export function getInitials(address) {
+export function getInitials(address, email) {
+  if (email) {
+    const name = email.split('@')[0];
+    return name.slice(0, 2).toUpperCase();
+  }
   return address.slice(2, 4).toUpperCase();
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import toast from 'react-hot-toast';
+import { BACKEND_URL } from './utils/constants';
 import { useContract } from './hooks/useContract';
 import { useSmartContract } from './hooks/useSmartContract';
 import { useFitness } from './hooks/useFitness';
@@ -13,7 +14,7 @@ import FundWallet from './components/FundWallet';
 import './App.css';
 
 function App() {
-  const { authenticated } = usePrivy();
+  const { authenticated, user } = usePrivy();
   const { contract, usdcContract, address } = useContract();
   const {
     approveAndCreateChallenge,
@@ -103,6 +104,18 @@ function App() {
       loadChallenges();
     }
   }, [contract, address, loadChallenges]);
+
+  // Register email → wallet mapping on login
+  useEffect(() => {
+    const email = user?.email?.address;
+    if (authenticated && address && email) {
+      fetch(`${BACKEND_URL}/api/users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address, email }),
+      }).catch((err) => console.error('Failed to register user:', err));
+    }
+  }, [authenticated, address, user]);
 
   const handleJoin = async (challengeId, stakeAmount) => {
     try {
