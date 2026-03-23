@@ -51,7 +51,11 @@ function ProofViewerPanel({
     if (!contract) return;
     setLoading(true);
     try {
+      console.log('ProofViewerPanel: loading challenge id=', challenge.id, 'type=', typeof challenge.id, 'contract=', contract.address);
+      const network = await contract.provider.getNetwork();
+      console.log('ProofViewerPanel: connected to chain', network.chainId);
       const addrs = await contract.getParticipants(challenge.id);
+      console.log('ProofViewerPanel: got', addrs.length, 'participants');
 
       // Fetch backend votes for this user
       let backendVotes = {};
