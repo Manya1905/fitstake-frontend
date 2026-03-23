@@ -22,29 +22,24 @@ export function useContract() {
   }, [user]);
 
   const connect = useCallback(async () => {
-    console.log('useContract: checking...', { ready, authenticated, walletsCount: wallets?.length });
-
     if (!ready || !authenticated) return;
     if (!wallets || wallets.length === 0) return;
 
     try {
       // Prefer Privy embedded wallet over browser extension wallets
       const wallet = wallets.find(w => w.walletClientType === 'privy') || wallets[0];
-      console.log('useContract: wallet found', wallet.address, 'type:', wallet.walletClientType);
 
       // Switch to Base Sepolia
       try {
         await wallet.switchChain(84532);
-        console.log('useContract: switched to Base Sepolia');
       } catch (switchErr) {
-        console.warn('useContract: chain switch error', switchErr.message);
+        console.warn('Chain switch error:', switchErr.message);
       }
 
       const walletAddress = wallet.address;
 
       // Use public RPC for read-only contract (guaranteed Base Sepolia)
       const readProvider = new ethers.providers.JsonRpcProvider(PUBLIC_RPC);
-      console.log('useContract: using public RPC for reads:', PUBLIC_RPC);
 
       const fitStakeContract = new ethers.Contract(
         CONTRACT_ADDRESS,
@@ -63,7 +58,6 @@ export function useContract() {
       setContract(fitStakeContract);
       setUsdcContract(usdcContractInstance);
       setAddress(walletAddress);
-      console.log('useContract: SUCCESS - all set');
     } catch (error) {
       console.error('useContract: FAILED', error);
     }
