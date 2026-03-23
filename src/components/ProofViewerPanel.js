@@ -51,7 +51,18 @@ function ProofViewerPanel({
     if (!contract) return;
     setLoading(true);
     try {
-      const addrs = await contract.getParticipants(challenge.id);
+      // Retry getParticipants up to 3 times (handles chain connection delays)
+      let addrs;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          addrs = await contract.getParticipants(challenge.id);
+          break;
+        } catch (err) {
+          console.error(`getParticipants attempt ${attempt}/3 failed:`, err.message);
+          if (attempt === 3) throw err;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
 
       // Fetch emails for all participants
       let emailMap = {};
