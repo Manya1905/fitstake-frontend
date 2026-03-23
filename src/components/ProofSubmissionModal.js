@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { useCloudinary } from '../hooks/useCloudinary';
 import { BACKEND_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../utils/constants';
-
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, onSubmitted }) {
   const [proofText, setProofText] = useState('');
@@ -13,7 +10,6 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fetchingFitness, setFetchingFitness] = useState(false);
-  const { upload, isConfigured } = useCloudinary();
   const fileInputRef = useRef(null);
 
   // Fetch fitness data when modal opens
