@@ -16,6 +16,10 @@ root.render(
   <React.StrictMode>
     <PrivyProvider
       appId={process.env.REACT_APP_PRIVY_APP_ID || 'placeholder-app-id'}
+      onError={(error) => {
+        console.error('Privy error:', error);
+        alert('Privy auth error: ' + (error?.message || JSON.stringify(error)));
+      }}
       config={{
         loginMethods: ['email'],
         appearance: {
