@@ -162,7 +162,6 @@ function ProofViewerPanel({
   // ─── Roster Screen ─────────────────────────────────────
 
   const handleRowClick = (participant) => {
-    if (participant.isCurrentUser) return;
     if (!participant.hasSubmitted) return;
     setSelectedParticipant(participant);
     setScreen('proof');
@@ -394,12 +393,12 @@ function ProofViewerPanel({
               {participants.map((p) => {
                 const vote = getMyVote(p.address);
                 const isOnChain = onChainVotes[p.address.toLowerCase()];
-                const isClickable = !p.isCurrentUser && p.hasSubmitted;
+                const isClickable = p.hasSubmitted;
 
                 return (
                   <div
                     key={p.address}
-                    className={`roster-row ${p.isCurrentUser ? 'locked' : ''} ${isClickable ? 'clickable' : ''}`}
+                    className={`roster-row ${isClickable ? 'clickable' : ''}`}
                     onClick={() => isClickable && handleRowClick(p)}
                   >
                     <div
@@ -525,8 +524,8 @@ function ProofViewerPanel({
               </div>
             )}
 
-            {/* Vote action bar */}
-            {canVote && (
+            {/* Vote action bar (hidden for your own proof) */}
+            {canVote && !selectedParticipant.isCurrentUser && (
               <div className="vote-action-bar">
                 {(() => {
                   const vote = getMyVote(selectedParticipant.address);
