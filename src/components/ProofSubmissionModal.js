@@ -92,29 +92,8 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
   };
 
   const handleMediaUpload = async () => {
-    if (isMobile) {
-      // On mobile, trigger native file picker
-      fileInputRef.current?.click();
-      return;
-    }
-
-    if (isConfigured) {
-      try {
-        const result = await upload('auto');
-        setMediaUrl(result.url);
-        setMediaType(result.type);
-        toast.success(`${result.type === 'video' ? 'Video' : 'Screenshot'} uploaded!`);
-      } catch (error) {
-        console.error('Upload error:', error);
-        toast.error('Upload failed: ' + error.message);
-      }
-    } else {
-      const url = window.prompt('Enter image/video URL:');
-      if (url) {
-        setMediaUrl(url);
-        setMediaType(url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image');
-      }
-    }
+    // Use native file picker on all platforms — uploads to Cloudinary via REST API
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = async () => {
