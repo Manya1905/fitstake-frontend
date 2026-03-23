@@ -8,8 +8,7 @@ import Header from './components/Header';
 import ChallengeList from './components/ChallengeList';
 import CreateChallengeForm from './components/CreateChallengeForm';
 import ProofSubmissionModal from './components/ProofSubmissionModal';
-import VotingModal from './components/VotingModal';
-import ChallengeDetailModal from './components/ChallengeDetailModal';
+import ProofViewerPanel from './components/ProofViewerPanel';
 import FundWallet from './components/FundWallet';
 import './App.css';
 
@@ -33,8 +32,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [proofChallenge, setProofChallenge] = useState(null);
-  const [voteChallenge, setVoteChallenge] = useState(null);
-  const [detailChallenge, setDetailChallenge] = useState(null);
+  const [viewChallenge, setViewChallenge] = useState(null);
   const [showFundWallet, setShowFundWallet] = useState(false);
   const loadChallenges = useCallback(async () => {
     if (!contract || !address) return;
@@ -208,9 +206,9 @@ function App() {
             loading={loading}
             onJoin={handleJoin}
             onSubmitProof={(challenge) => setProofChallenge(challenge)}
-            onVote={(challenge) => setVoteChallenge(challenge)}
+            onVote={(challenge) => setViewChallenge(challenge)}
             onDistribute={handleDistribute}
-            onViewDetail={(challenge) => setDetailChallenge(challenge)}
+            onViewDetail={(challenge) => setViewChallenge(challenge)}
             onRequestToJoin={handleRequestToJoin}
           />
 
@@ -227,26 +225,17 @@ function App() {
             />
           )}
 
-          {voteChallenge && (
-            <VotingModal
-              challenge={voteChallenge}
+          {viewChallenge && (
+            <ProofViewerPanel
+              challenge={viewChallenge}
               contract={contract}
               address={address}
               onCastVotes={smartCastVotes}
-              onClose={() => setVoteChallenge(null)}
+              onClose={() => setViewChallenge(null)}
               onVoted={() => {
-                setVoteChallenge(null);
+                setViewChallenge(null);
                 loadChallenges();
               }}
-            />
-          )}
-
-          {detailChallenge && (
-            <ChallengeDetailModal
-              challenge={detailChallenge}
-              contract={contract}
-              address={address}
-              onClose={() => setDetailChallenge(null)}
               onApproveRequest={smartApproveJoinRequest}
               onRejectRequest={smartRejectJoinRequest}
               onJoinWithCode={smartJoinWithInviteCode}

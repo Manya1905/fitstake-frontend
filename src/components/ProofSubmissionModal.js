@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { BACKEND_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../utils/constants';
 
+const MAX_MEDIA = 3;
+
 function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, onSubmitted }) {
   const [proofText, setProofText] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaType, setMediaType] = useState(''); // 'image' or 'video'
+  const [mediaFiles, setMediaFiles] = useState([]); // [{ url, type }]
   const [fitnessData, setFitnessData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -58,6 +59,11 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
       return;
     }
 
+    if (mediaFiles.length >= MAX_MEDIA) {
+      toast.error(`Maximum ${MAX_MEDIA} files allowed`);
+      return;
+    }
+
     setUploading(true);
     try {
       const formData = new FormData();
@@ -72,9 +78,8 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
       const data = await res.json();
 
       if (data.secure_url) {
-        setMediaUrl(data.secure_url);
-        setMediaType(data.resource_type);
-        toast.success(`${data.resource_type === 'video' ? 'Video' : 'Screenshot'} uploaded!`);
+        setMediaFiles((prev) => [...prev, { url: data.secure_url, type: data.resource_type }]);
+        toast.success(`${data.resource_type === 'video' ? 'Video' : 'Screenshot'} uploaded! (${mediaFiles.length + 1}/${MAX_MEDIA})`);
       } else {
         throw new Error(data.error?.message || 'Upload failed');
       }
@@ -83,13 +88,15 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
       toast.error('Upload failed: ' + error.message);
     }
     setUploading(false);
-    // Reset input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleMediaUpload = async () => {
-    // Use native file picker on all platforms — uploads to Cloudinary via REST API
+  const handleMediaUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  const removeMedia = (index) => {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -101,8 +108,7 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
 
       const proofData = JSON.stringify({
         text: proofText,
-        media: mediaUrl || undefined,
-        mediaType: mediaType || undefined,
+        media: mediaFiles.length > 0 ? mediaFiles : undefined,
         fitness: fitnessData || undefined,
         timestamp: Date.now(),
       });
@@ -159,7 +165,7 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
           />
         </div>
 
-        {/* Media upload (screenshot or video) */}
+        {/* Media upload (up to 3 screenshots/videos) */}
         <div className="screenshot-section">
           <input
             type="file"
@@ -168,30 +174,39 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
             onChange={handleNativeFileUpload}
             style={{ display: 'none' }}
           />
-          <button
-            onClick={handleMediaUpload}
-            className="screenshot-btn"
-            type="button"
-            disabled={uploading}
-          >
-            {uploading ? 'Uploading...' : 'Upload Screenshot or Video'}
-          </button>
-          {mediaUrl && (
-            <div className="screenshot-preview">
-              {mediaType === 'video' ? (
-                <video src={mediaUrl} controls playsInline style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 12 }} />
-              ) : (
-                <img src={mediaUrl} alt="Proof" />
-              )}
-            </div>
+          {mediaFiles.length < MAX_MEDIA && (
+            <button
+              onClick={handleMediaUpload}
+              className="screenshot-btn"
+              type="button"
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : `Upload Screenshot or Video (${mediaFiles.length}/${MAX_MEDIA})`}
+            </button>
           )}
+          {mediaFiles.map((file, i) => (
+            <div key={i} className="screenshot-preview" style={{ position: 'relative' }}>
+              {file.type === 'video' ? (
+                <video src={file.url} controls playsInline style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 12 }} />
+              ) : (
+                <img src={file.url} alt={`Proof ${i + 1}`} />
+              )}
+              <button
+                onClick={() => removeMedia(i)}
+                className="remove-media-btn"
+                type="button"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
         </div>
 
         <div className="modal-buttons">
           <button
             onClick={handleSubmit}
             className="submit-btn"
-            disabled={loading || (!proofText && !fitnessData && !mediaUrl)}
+            disabled={loading || (!proofText && !fitnessData && mediaFiles.length === 0)}
           >
             {loading ? 'Submitting...' : 'Submit Proof'}
           </button>
