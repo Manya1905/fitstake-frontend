@@ -204,7 +204,7 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
           {mediaUrl && (
             <div className="screenshot-preview">
               {mediaType === 'video' ? (
-                <video src={mediaUrl} controls style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 12 }} />
+                <video src={mediaUrl} controls playsInline style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 12 }} />
               ) : (
                 <img src={mediaUrl} alt="Proof" />
               )}

@@ -232,7 +232,9 @@ function ChallengeDetailModal({
                             </div>
                           )}
                           {parsed.media && parsed.mediaType === 'video' && (
-                            <p className="video-label">Video proof submitted</p>
+                            <div className="proof-screenshot">
+                              <video src={parsed.media} controls playsInline style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 10 }} />
+                            </div>
                           )}
                           {parsed.fitness && parsed.fitness.length > 0 && (
                             <div className="proof-terra">

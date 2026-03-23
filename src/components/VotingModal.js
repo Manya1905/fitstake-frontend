@@ -115,7 +115,7 @@ function VotingModal({ challenge, contract, address, onCastVotes, onClose, onVot
                   {p.proof.media && (
                     <div className="proof-screenshot">
                       {p.proof.mediaType === 'video' ? (
-                        <video src={p.proof.media} controls style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 10 }} />
+                        <video src={p.proof.media} controls playsInline style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 10 }} />
                       ) : (
                         <img src={p.proof.media} alt="Proof" />
                       )}
