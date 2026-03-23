@@ -17,13 +17,11 @@ root.render(
     <PrivyProvider
       appId={process.env.REACT_APP_PRIVY_APP_ID || 'placeholder-app-id'}
       config={{
-        loginMethods: ['email', 'google'],
+        loginMethods: ['email'],
         appearance: {
           theme: 'light',
           accentColor: '#b2dfdb',
         },
-        // Allow OAuth in PWA standalone mode (treated as embedded browser)
-        allowOAuthInEmbeddedBrowsers: true,
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
         },
