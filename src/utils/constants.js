@@ -6,7 +6,7 @@ export const CONTRACT_ADDRESS = '0x952B11d34907e2cF17896Cd349E1D9927FE67914';
 export const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
 
 // Backend URL
-export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://fitstake-backend.onrender.com';
 
 // Cloudinary
 export const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || '';
