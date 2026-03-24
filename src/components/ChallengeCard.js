@@ -141,8 +141,8 @@ function ChallengeCard({
           </>
         )}
 
-        {/* Submit Proof button: during Active or ProofSubmission phase, joined, not submitted */}
-        {(phase === Phase.Active || phase === Phase.ProofSubmission) &&
+        {/* Submit Proof button: during Joining, Active, or ProofSubmission phase, joined, not submitted */}
+        {(phase === Phase.Joining || phase === Phase.Active || phase === Phase.ProofSubmission) &&
           challenge.hasJoined &&
           !challenge.hasSubmitted && (
             <button

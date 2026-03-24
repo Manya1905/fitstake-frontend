@@ -2,7 +2,7 @@ import { parseAbi } from 'viem';
 import abi from './abi.json';
 
 // Contract addresses (Base Mainnet)
-export const CONTRACT_ADDRESS = '0x25BF324a9a818dc850605dB19f105247Da85d53f';
+export const CONTRACT_ADDRESS = '0x13a1EC1b4e17D417B23c52adfFCAC978B6e8cB26';
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 // Backend URL
