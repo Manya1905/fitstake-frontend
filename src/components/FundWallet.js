@@ -23,7 +23,18 @@ function FundWallet({ address }) {
         Buy USDC
       </button>
       <p className="fund-hint">
-        Purchase USDC with your credit card. Funds go directly to your wallet.
+        Purchase USDC with your credit card, or send USDC on Base to your wallet:
+      </p>
+      <p className="wallet-address-row">
+        <code className="wallet-address">{address}</code>
+        <button
+          className="copy-btn"
+          onClick={() => {
+            navigator.clipboard.writeText(address);
+          }}
+        >
+          Copy
+        </button>
       </p>
     </div>
   );

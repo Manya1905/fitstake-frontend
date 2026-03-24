@@ -283,6 +283,38 @@ body {
   word-break: break-all;
 }
 
+.wallet-address-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.wallet-address {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.copy-btn {
+  background: rgba(0, 0, 0, 0.08);
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #37474f;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
 /* ─── Create Form ────────────────────────────────── */
 
 .create-form {
