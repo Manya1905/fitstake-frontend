@@ -3,7 +3,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import USDCBalance from './USDCBalance';
 import FitnessConnect from './FitnessConnect';
 
-function Header({ usdcContract, address, fitnessHook }) {
+function Header({ usdcContract, address, fitnessHook, onOpenProfile }) {
   const { login, logout, ready, authenticated, user } = usePrivy();
 
   const displayAddress = address
@@ -26,7 +26,11 @@ function Header({ usdcContract, address, fitnessHook }) {
       ) : (
         <div className="header-info">
           <div className="header-buttons">
-            <div className="account-info">
+            <div
+              className="account-info account-info-clickable"
+              onClick={onOpenProfile}
+              title="View profile"
+            >
               {displayName}
             </div>
             {address && <USDCBalance usdcContract={usdcContract} address={address} />}

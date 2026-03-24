@@ -10,6 +10,7 @@ import ChallengeList from './components/ChallengeList';
 import CreateChallengeForm from './components/CreateChallengeForm';
 import ProofSubmissionModal from './components/ProofSubmissionModal';
 import ProofViewerPanel from './components/ProofViewerPanel';
+import ProfilePanel from './components/ProfilePanel';
 import FundWallet from './components/FundWallet';
 import './App.css';
 
@@ -35,10 +36,11 @@ function App() {
   const [proofChallenge, setProofChallenge] = useState(null);
   const [viewChallenge, setViewChallenge] = useState(null);
   const [showFundWallet, setShowFundWallet] = useState(false);
-  const loadChallenges = useCallback(async () => {
+  const [showProfile, setShowProfile] = useState(false);
+  const loadChallenges = useCallback(async (silent = false) => {
     if (!contract || !address) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const count = await contract.challengeCount();
       const challengeList = [];
@@ -94,15 +96,22 @@ function App() {
       setChallenges(challengeList);
     } catch (error) {
       console.error('Error loading challenges:', error);
-      toast.error('Error loading challenges');
+      if (!silent) toast.error('Error loading challenges');
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [contract, address]);
 
   useEffect(() => {
     if (contract && address) {
       loadChallenges();
     }
+  }, [contract, address, loadChallenges]);
+
+  // Auto-refresh challenges every 30 seconds
+  useEffect(() => {
+    if (!contract || !address) return;
+    const interval = setInterval(() => loadChallenges(true), 30000);
+    return () => clearInterval(interval);
   }, [contract, address, loadChallenges]);
 
   // Register email → wallet mapping on login
@@ -171,6 +180,7 @@ function App() {
         usdcContract={usdcContract}
         address={address}
         fitnessHook={fitnessHook}
+        onOpenProfile={() => setShowProfile(true)}
       />
 
       {authenticated && address && (
@@ -253,6 +263,15 @@ function App() {
               onRejectRequest={smartRejectJoinRequest}
               onJoinWithCode={smartJoinWithInviteCode}
               onRefresh={loadChallenges}
+            />
+          )}
+
+          {showProfile && (
+            <ProfilePanel
+              contract={contract}
+              address={address}
+              userEmail={user?.email?.address}
+              onClose={() => setShowProfile(false)}
             />
           )}
         </main>

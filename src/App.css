@@ -1816,3 +1816,265 @@ html {
     padding: 1.5rem;
   }
 }
+
+/* ─── Vote Stats (Own Proof View) ────────────────── */
+
+.vote-stats-section {
+  background: rgba(178, 223, 219, 0.1);
+  border: 1px solid rgba(178, 223, 219, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vote-stats-section h4 {
+  color: #37474f;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.vote-stats-counts {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.vote-stats-approved {
+  color: #065f46;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.vote-stats-rejected {
+  color: #991b1b;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.vote-stats-reasons {
+  margin-top: 0.5rem;
+}
+
+.vote-stats-reasons-label {
+  font-size: 0.8rem;
+  color: #78909c;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.rejection-card {
+  background: rgba(244, 67, 54, 0.05);
+  border: 1px solid rgba(244, 67, 54, 0.15);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.rejection-reason {
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #546e7a;
+}
+
+.vote-stats-empty {
+  color: #78909c;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ─── Account Info Clickable ─────────────────────── */
+
+.account-info-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+  text-decoration: underline;
+  text-decoration-color: rgba(84, 110, 122, 0.3);
+  text-underline-offset: 2px;
+}
+
+.account-info-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Profile Panel ──────────────────────────────── */
+
+.profile-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(178, 223, 219, 0.1));
+  backdrop-filter: blur(20px);
+  padding: 1.5rem;
+  border-radius: 20px;
+  max-width: 550px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.profile-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #37474f;
+}
+
+.profile-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #78909c;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+
+.profile-close-btn:hover {
+  color: #37474f;
+}
+
+.profile-email {
+  font-size: 0.9rem;
+  color: #78909c;
+  margin-bottom: 1.25rem;
+}
+
+.profile-loading,
+.profile-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #78909c;
+  font-style: italic;
+}
+
+.profile-section {
+  margin-bottom: 1.25rem;
+}
+
+.profile-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #78909c;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.profile-challenge-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  transition: background 0.15s;
+}
+
+.profile-challenge-card.clickable {
+  cursor: pointer;
+}
+
+.profile-challenge-card.clickable:hover {
+  background: rgba(27, 158, 117, 0.04);
+}
+
+.profile-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-goal {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #37474f;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-outcome {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profile-outcome-won {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.profile-outcome-lost {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.profile-vote-counts {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.profile-no-votes {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #b0bec5;
+  font-style: italic;
+}
+
+.profile-tap-hint {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #b0bec5;
+  font-style: italic;
+}
+
+.profile-loading-detail {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #78909c;
+  font-style: italic;
+}
+
+.profile-payout-detail {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-payout-amount {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.profile-payout-amount.won {
+  color: #065f46;
+}
+
+.profile-payout-amount.lost {
+  color: #991b1b;
+}
+
+.profile-payout-breakdown {
+  font-size: 0.8rem;
+  color: #78909c;
+}
+
+.profile-close-section {
+  margin-top: 0.75rem;
+}

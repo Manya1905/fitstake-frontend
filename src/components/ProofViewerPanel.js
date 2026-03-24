@@ -34,6 +34,7 @@ function ProofViewerPanel({
   const [joinRequests, setJoinRequests] = useState([]);
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [joiningWithCode, setJoiningWithCode] = useState(false);
+  const [myVoteStats, setMyVoteStats] = useState(null);
 
   // Vote sheet state
   const [sheetChoice, setSheetChoice] = useState(null); // 'approved' | 'rejected'
@@ -47,9 +48,9 @@ function ProofViewerPanel({
   const canVote = (challenge.phase === Phase.Voting || challenge.phase === Phase.GracePeriod) &&
     challenge.hasSubmitted;
 
-  const loadParticipants = useCallback(async () => {
+  const loadParticipants = useCallback(async (silent = false) => {
     if (!contract) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       // Retry getParticipants up to 3 times (handles chain connection delays)
       let addrs;
@@ -149,6 +150,23 @@ function ProofViewerPanel({
         });
       }
 
+      // Load vote stats for current user's own proof
+      try {
+        const [forVotes, againstVotes] = await contract.getVoteCounts(challenge.id, address);
+        const votesRes = await fetch(`${BACKEND_URL}/api/votes/${challenge.id}/for/${address}`);
+        const votesData = await votesRes.json();
+        const reasons = (votesData.votes || [])
+          .filter((v) => v.vote === 'rejected' && v.reason)
+          .map((v) => v.reason);
+        setMyVoteStats({
+          forVotes: Number(forVotes),
+          againstVotes: Number(againstVotes),
+          rejectionReasons: reasons,
+        });
+      } catch (err) {
+        console.error('Error loading own vote stats:', err);
+      }
+
       setParticipants(participantData);
       setOnChainVotes(chainVotes);
       setLocalVotes(localV);
@@ -164,13 +182,19 @@ function ProofViewerPanel({
       }
     } catch (error) {
       console.error('Error loading participants:', error);
-      toast.error('Failed to load participants');
+      if (!silent) toast.error('Failed to load participants');
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [contract, challenge, address, isCreator]);
 
   useEffect(() => {
     loadParticipants();
+  }, [loadParticipants]);
+
+  // Auto-refresh participants every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => loadParticipants(true), 15000);
+    return () => clearInterval(interval);
   }, [loadParticipants]);
 
   // Count pending votes (local but not yet on-chain)
@@ -499,6 +523,37 @@ function ProofViewerPanel({
                 )}
               </div>
             </div>
+
+            {/* Vote stats for your own proof */}
+            {selectedParticipant.isCurrentUser && (
+              <div className="vote-stats-section">
+                <h4>Your Vote Stats</h4>
+                {myVoteStats && (myVoteStats.forVotes > 0 || myVoteStats.againstVotes > 0) ? (
+                  <>
+                    <div className="vote-stats-counts">
+                      <span className="vote-stats-approved">
+                        &#10003; {myVoteStats.forVotes} Approved
+                      </span>
+                      <span className="vote-stats-rejected">
+                        &#10005; {myVoteStats.againstVotes} Rejected
+                      </span>
+                    </div>
+                    {myVoteStats.rejectionReasons.length > 0 && (
+                      <div className="vote-stats-reasons">
+                        <p className="vote-stats-reasons-label">Rejection reasons:</p>
+                        {myVoteStats.rejectionReasons.map((reason, i) => (
+                          <div key={i} className="rejection-card">
+                            <p className="rejection-reason">"{reason}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="vote-stats-empty">No votes received yet</p>
+                )}
+              </div>
+            )}
 
             {selectedParticipant.caption && (
               <p className="proof-caption">{selectedParticipant.caption}</p>
