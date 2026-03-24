@@ -7,9 +7,13 @@ function FundWallet({ address }) {
   if (!address) return null;
 
   const handleFund = () => {
-    fundWallet(address, {
-      chain: { id: 8453 },
-      asset: 'USDC',
+    fundWallet({
+      address,
+      options: {
+        chain: { id: 8453 },
+        amount: '5',
+        asset: 'USDC',
+      },
     });
   };
 
