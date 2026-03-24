@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BACKEND_URL, formatUSDC, Phase, PHASE_LABELS, PHASE_COLORS } from '../utils/constants';
+import { formatUSDC, Phase, PHASE_LABELS, PHASE_COLORS } from '../utils/constants';
 
 function ProfilePanel({ contract, address, userEmail, onClose }) {
   const [challenges, setChallenges] = useState([]);
