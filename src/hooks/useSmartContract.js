@@ -13,11 +13,21 @@ export function useSmartContract() {
   );
   const smartWalletAddress = smartWallet?.address || '';
 
+  // Wait for smart wallet client to be ready (up to 10 seconds)
+  const getClient = async () => {
+    if (client) return client;
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      if (client) return client;
+    }
+    throw new Error('Smart wallet not ready. Please wait a moment and try again.');
+  };
+
   // Batch: approve USDC + create challenge in one atomic tx
   const approveAndCreateChallenge = async (stakeAmount, goal, joinDeadlineTs, deadlineTs, proofWindowHours, voteWindowHours, graceHours, isPrivate = false, inviteCodeHash = '0x0000000000000000000000000000000000000000000000000000000000000000') => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       calls: [
         {
           to: USDC_ADDRESS,
@@ -43,9 +53,9 @@ export function useSmartContract() {
 
   // Batch: approve USDC + join challenge in one atomic tx
   const approveAndJoinChallenge = async (challengeId, stakeAmount) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       calls: [
         {
           to: USDC_ADDRESS,
@@ -71,9 +81,9 @@ export function useSmartContract() {
 
   // Single tx: submit proof
   const submitProof = async (challengeId, proofData) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -87,9 +97,9 @@ export function useSmartContract() {
 
   // Single tx: cast votes
   const castVotes = async (challengeId, addresses, approvals) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -103,9 +113,9 @@ export function useSmartContract() {
 
   // Single tx: distribute rewards
   const distributeRewards = async (challengeId) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -119,9 +129,9 @@ export function useSmartContract() {
 
   // Single tx: request to join private challenge
   const requestToJoin = async (challengeId) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -135,9 +145,9 @@ export function useSmartContract() {
 
   // Single tx: approve join request (creator only)
   const approveJoinRequest = async (challengeId, userAddress) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -151,9 +161,9 @@ export function useSmartContract() {
 
   // Single tx: reject join request (creator only)
   const rejectJoinRequest = async (challengeId, userAddress) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       to: CONTRACT_ADDRESS,
       data: encodeFunctionData({
         abi: FITSTAKE_ABI,
@@ -167,9 +177,9 @@ export function useSmartContract() {
 
   // Batch: approve USDC + join with invite code in one atomic tx
   const approveAndJoinWithInviteCode = async (challengeId, inviteCode, stakeAmount) => {
-    if (!client) throw new Error('Smart wallet not ready');
+    const c = await getClient();
 
-    const txHash = await client.sendTransaction({
+    const txHash = await c.sendTransaction({
       calls: [
         {
           to: USDC_ADDRESS,
