@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI, BASE_SEPOLIA } from '../utils/constants';
+import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI, BASE_MAINNET } from '../utils/constants';
 
-// Public RPC provider for read-only contract calls (always Base Sepolia)
-const PUBLIC_RPC = BASE_SEPOLIA.rpcUrls.default.http[0];
+// Public RPC provider for read-only contract calls (always Base Mainnet)
+const PUBLIC_RPC = BASE_MAINNET.rpcUrls.default.http[0];
 
 export function useContract() {
   const { ready, authenticated, user } = usePrivy();
@@ -29,16 +29,16 @@ export function useContract() {
       // Prefer Privy embedded wallet over browser extension wallets
       const wallet = wallets.find(w => w.walletClientType === 'privy') || wallets[0];
 
-      // Switch to Base Sepolia
+      // Switch to Base Mainnet
       try {
-        await wallet.switchChain(84532);
+        await wallet.switchChain(8453);
       } catch (switchErr) {
         console.warn('Chain switch error:', switchErr.message);
       }
 
       const walletAddress = wallet.address;
 
-      // Use public RPC for read-only contract (guaranteed Base Sepolia)
+      // Use public RPC for read-only contract (guaranteed Base Mainnet)
       const readProvider = new ethers.providers.JsonRpcProvider(PUBLIC_RPC);
 
       const fitStakeContract = new ethers.Contract(

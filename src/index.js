@@ -34,35 +34,35 @@ root.render(
           metamask: { connectionOptions: 'disabled' },
         },
         defaultChain: {
-          id: 84532,
-          name: 'Base Sepolia',
-          network: 'base-sepolia',
+          id: 8453,
+          name: 'Base',
+          network: 'base',
           nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
           rpcUrls: {
             default: {
-              http: [process.env.REACT_APP_ALCHEMY_BASE_SEPOLIA_URL || 'https://sepolia.base.org'],
+              http: [process.env.REACT_APP_ALCHEMY_BASE_URL || 'https://mainnet.base.org'],
             },
           },
           blockExplorers: {
-            default: { name: 'BaseScan', url: 'https://sepolia.basescan.org' },
+            default: { name: 'BaseScan', url: 'https://basescan.org' },
           },
-          testnet: true,
+          testnet: false,
         },
         supportedChains: [
           {
-            id: 84532,
-            name: 'Base Sepolia',
-            network: 'base-sepolia',
+            id: 8453,
+            name: 'Base',
+            network: 'base',
             nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
             rpcUrls: {
               default: {
-                http: [process.env.REACT_APP_ALCHEMY_BASE_SEPOLIA_URL || 'https://sepolia.base.org'],
+                http: [process.env.REACT_APP_ALCHEMY_BASE_URL || 'https://mainnet.base.org'],
               },
             },
             blockExplorers: {
-              default: { name: 'BaseScan', url: 'https://sepolia.basescan.org' },
+              default: { name: 'BaseScan', url: 'https://basescan.org' },
             },
-            testnet: true,
+            testnet: false,
           },
         ],
       }}

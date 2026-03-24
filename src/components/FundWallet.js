@@ -1,23 +1,25 @@
 import React from 'react';
+import { useFundWallet } from '@privy-io/react-auth';
 
 function FundWallet({ address }) {
+  const { fundWallet } = useFundWallet();
+
   if (!address) return null;
 
-  // Link to Circle faucet for testnet USDC
-  const faucetUrl = 'https://faucet.circle.com/';
+  const handleFund = () => {
+    fundWallet(address, {
+      chain: { id: 8453 },
+      asset: 'USDC',
+    });
+  };
 
   return (
     <div className="fund-wallet">
-      <a
-        href={faucetUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fund-btn"
-      >
-        Get Testnet USDC
-      </a>
+      <button onClick={handleFund} className="fund-btn">
+        Buy USDC
+      </button>
       <p className="fund-hint">
-        Copy your wallet address: <code>{address}</code>
+        Purchase USDC with your credit card. Funds go directly to your wallet.
       </p>
     </div>
   );

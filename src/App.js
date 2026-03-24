@@ -192,7 +192,7 @@ function App() {
                 onClick={() => setShowFundWallet(!showFundWallet)}
                 className="fund-toggle-btn"
               >
-                Get USDC
+                Buy USDC
               </button>
               <button
                 onClick={() => setShowCreateForm(!showCreateForm)}

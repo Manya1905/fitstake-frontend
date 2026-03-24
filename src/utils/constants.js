@@ -1,9 +1,9 @@
 import { parseAbi } from 'viem';
 import abi from './abi.json';
 
-// Contract addresses (Base Sepolia)
-export const CONTRACT_ADDRESS = '0x952B11d34907e2cF17896Cd349E1D9927FE67914';
-export const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+// Contract addresses (Base Mainnet)
+export const CONTRACT_ADDRESS = '0x25BF324a9a818dc850605dB19f105247Da85d53f';
+export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 // Backend URL
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://fitstake-backend.onrender.com';
@@ -24,21 +24,21 @@ export const USDC_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
 ];
 
-// Base Sepolia chain config
-export const BASE_SEPOLIA = {
-  id: 84532,
-  name: 'Base Sepolia',
-  network: 'base-sepolia',
+// Base Mainnet chain config
+export const BASE_MAINNET = {
+  id: 8453,
+  name: 'Base',
+  network: 'base',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
     default: {
-      http: [process.env.REACT_APP_ALCHEMY_BASE_SEPOLIA_URL || 'https://sepolia.base.org'],
+      http: [process.env.REACT_APP_ALCHEMY_BASE_URL || 'https://mainnet.base.org'],
     },
   },
   blockExplorers: {
-    default: { name: 'BaseScan', url: 'https://sepolia.basescan.org' },
+    default: { name: 'BaseScan', url: 'https://basescan.org' },
   },
-  testnet: true,
+  testnet: false,
 };
 
 // Phase enum matching the contract
