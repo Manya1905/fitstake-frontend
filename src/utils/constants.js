@@ -78,6 +78,9 @@ export const USDC_ABI_VIEM = parseAbi([
   'function transfer(address to, uint256 amount) returns (bool)',
 ]);
 
+// Zero bytes32 constant (used for invite code default)
+export const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
 // USDC helpers (6 decimals)
 export function parseUSDC(amount) {
   // eslint-disable-next-line no-undef

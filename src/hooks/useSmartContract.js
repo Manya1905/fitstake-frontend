@@ -1,7 +1,7 @@
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets';
 import { usePrivy } from '@privy-io/react-auth';
 import { encodeFunctionData } from 'viem';
-import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI_VIEM } from '../utils/constants';
+import { CONTRACT_ADDRESS, USDC_ADDRESS, FITSTAKE_ABI, USDC_ABI_VIEM, ZERO_BYTES32 } from '../utils/constants';
 
 export function useSmartContract() {
   const { client } = useSmartWallets();
@@ -24,7 +24,7 @@ export function useSmartContract() {
   };
 
   // Batch: approve USDC + create challenge in one atomic tx
-  const approveAndCreateChallenge = async (stakeAmount, goal, joinDeadlineTs, deadlineTs, proofWindowHours, voteWindowHours, graceHours, isPrivate = false, inviteCodeHash = '0x0000000000000000000000000000000000000000000000000000000000000000') => {
+  const approveAndCreateChallenge = async (stakeAmount, goal, joinDeadlineTs, deadlineTs, proofWindowHours, voteWindowHours, graceHours, isPrivate = false, inviteCodeHash = ZERO_BYTES32) => {
     const c = await getClient();
 
     const txHash = await c.sendTransaction({

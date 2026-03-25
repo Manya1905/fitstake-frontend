@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { keccak256, encodePacked } from 'viem';
-import { parseUSDC } from '../utils/constants';
+import { parseUSDC, ZERO_BYTES32 } from '../utils/constants';
 
 function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
   const [goal, setGoal] = useState('');
@@ -42,7 +42,6 @@ function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
     }
 
     // Hash invite code if provided
-    const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
     let inviteCodeHash = ZERO_BYTES32;
     if (isPrivate && inviteCode.trim()) {
       inviteCodeHash = keccak256(encodePacked(['string'], [inviteCode.trim()]));

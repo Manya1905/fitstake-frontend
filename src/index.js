@@ -3,22 +3,26 @@ import ReactDOM from 'react-dom/client';
 import { Buffer } from 'buffer';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import './index.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 window.Buffer = Buffer;
 
+if (!process.env.REACT_APP_PRIVY_APP_ID) {
+  throw new Error('REACT_APP_PRIVY_APP_ID is not set. Check your .env file.');
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
     <PrivyProvider
-      appId={process.env.REACT_APP_PRIVY_APP_ID || 'placeholder-app-id'}
+      appId={process.env.REACT_APP_PRIVY_APP_ID}
       onError={(error) => {
         console.error('Privy error:', error);
-        alert('Privy auth error: ' + (error?.message || JSON.stringify(error)));
+        toast.error('Auth error: ' + (error?.message || 'Unknown error'));
       }}
       config={{
         loginMethods: ['email'],
