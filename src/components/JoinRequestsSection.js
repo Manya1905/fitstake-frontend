@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-function JoinRequestsSection({ challenge, joinRequests, onApprove, onReject }) {
+function JoinRequestsSection({ challenge, joinRequests, emailMap = {}, onApprove, onReject }) {
   const [processing, setProcessing] = useState(null);
   const joinDeadlinePassed = Math.floor(Date.now() / 1000) > challenge.joinDeadline;
 
@@ -43,7 +43,7 @@ function JoinRequestsSection({ challenge, joinRequests, onApprove, onReject }) {
       {joinRequests.map((addr) => (
         <div key={addr} className={`request-item ${joinDeadlinePassed ? 'request-expired' : ''}`}>
           <span className="request-address">
-            {addr.slice(0, 6)}...{addr.slice(-4)}
+            {emailMap[addr.toLowerCase()] || `${addr.slice(0, 6)}...${addr.slice(-4)}`}
           </span>
           <div className="request-actions">
             <button

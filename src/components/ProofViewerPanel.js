@@ -32,6 +32,7 @@ function ProofViewerPanel({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
+  const [emailMap, setEmailMap] = useState({});
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [joiningWithCode, setJoiningWithCode] = useState(false);
   const [myVoteStats, setMyVoteStats] = useState(null);
@@ -176,10 +177,27 @@ function ProofViewerPanel({
         try {
           const requests = await contract.getJoinRequests(challenge.id);
           setJoinRequests([...requests]);
+          // Fetch emails for join request addresses too
+          if (requests.length > 0) {
+            try {
+              const reqEmailRes = await fetch(`${BACKEND_URL}/api/users/lookup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ addresses: [...requests] }),
+              });
+              const reqEmailData = await reqEmailRes.json();
+              if (reqEmailData.users) {
+                emailMap = { ...emailMap, ...reqEmailData.users };
+              }
+            } catch (err) {
+              console.error('Error fetching join request emails:', err);
+            }
+          }
         } catch {
           // getJoinRequests may not exist on older contracts
         }
       }
+      setEmailMap(emailMap);
     } catch (error) {
       console.error('Error loading participants:', error);
       if (!silent) toast.error('Failed to load participants');
@@ -432,6 +450,7 @@ function ProofViewerPanel({
               <JoinRequestsSection
                 challenge={challenge}
                 joinRequests={joinRequests}
+                emailMap={emailMap}
                 onApprove={handleApprove}
                 onReject={handleReject}
               />
