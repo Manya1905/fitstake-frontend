@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { BACKEND_URL, CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../utils/constants';
 
 const MAX_MEDIA = 3;
+const MAX_CAPTION = 500;
 
 function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, onSubmitted }) {
   const [proofText, setProofText] = useState('');
@@ -13,7 +14,6 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
   const [fetchingFitness, setFetchingFitness] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Fetch fitness data when modal opens
   useEffect(() => {
     if (fitnessHook && fitnessHook.connectedProvider && challenge) {
       const fetchData = async () => {
@@ -124,96 +124,136 @@ function ProofSubmissionModal({ challenge, onSubmitProof, fitnessHook, onClose, 
     setLoading(false);
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Submit Proof</h3>
-        <p className="modal-subtitle">Challenge: {challenge.goal}</p>
+  const proofDueDate = challenge.proofDeadline
+    ? new Date(challenge.proofDeadline * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : null;
 
-        {/* Fitness App Data */}
+  const canSubmit = !loading && (proofText || fitnessData || mediaFiles.length > 0);
+
+  return (
+    <div className="proof-submission-screen">
+      {/* Nav bar */}
+      <div className="nav">
+        <button className="btn-back" onClick={onClose}>&larr; Cancel</button>
+        <span className="nav-title">Submit proof</span>
+        <div style={{ width: 60 }} />
+      </div>
+
+      <div className="proof-submission-body">
+        {/* Challenge info header */}
+        <div style={{ marginBottom: 18 }}>
+          <h2 className="create-form-heading" style={{ marginBottom: 4 }}>{challenge.goal}</h2>
+          {proofDueDate && (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Proof due {proofDueDate}</p>
+          )}
+        </div>
+
+        {/* Media upload grid — 3 slots */}
+        <input
+          type="file"
+          accept="image/*,video/*"
+          ref={fileInputRef}
+          onChange={handleNativeFileUpload}
+          style={{ display: 'none' }}
+        />
+        <div className="media-upload-grid">
+          {[0, 1, 2].map((index) => {
+            const file = mediaFiles[index];
+            if (file) {
+              return (
+                <div key={index} className="media-slot media-slot-filled">
+                  {file.type === 'video' ? (
+                    <video src={file.url} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+                  ) : (
+                    <img src={file.url} alt={`Proof ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+                  )}
+                  <button
+                    className="media-slot-remove"
+                    onClick={(e) => { e.stopPropagation(); removeMedia(index); }}
+                    type="button"
+                  >
+                    &times;
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div
+                key={index}
+                className="media-slot"
+                onClick={index === mediaFiles.length ? handleMediaUpload : undefined}
+                style={{ cursor: index === mediaFiles.length ? 'pointer' : 'default', opacity: index > mediaFiles.length ? 0.4 : 1 }}
+              >
+                {uploading && index === mediaFiles.length ? (
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Uploading...</span>
+                ) : index === mediaFiles.length ? (
+                  <>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 5v14M5 12h14" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Add photo</span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{index + 1}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Fitness data card */}
         {fitnessHook && fitnessHook.connectedProvider && (
-          <div className="fitness-data-section">
-            <h4>Fitness App Data ({fitnessHook.connectedProvider})</h4>
+          <div className="fitness-data-card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                backgroundColor: fitnessHook.connectedProvider === 'strava' ? '#fc4c02' : 'var(--color-teal)',
+              }} />
+              <strong style={{ fontSize: 13 }}>{fitnessHook.connectedProvider === 'strava' ? 'Strava' : 'Fitbit'} data</strong>
+            </div>
             {fetchingFitness ? (
-              <p>Fetching workout data...</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Fetching workout data...</p>
             ) : fitnessData && fitnessData.length > 0 ? (
-              <div className="fitness-summary">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {fitnessData.map((activity, i) => (
-                  <div key={i} className="fitness-activity">
-                    <p><strong>{activity.name || activity.type || 'Workout'}</strong></p>
-                    {activity.duration && <p>Duration: {Math.round(activity.duration / 60)} min</p>}
-                    {activity.distance && <p>Distance: {(activity.distance / 1000).toFixed(2)} km</p>}
-                    {activity.calories && <p>Calories: {activity.calories}</p>}
-                    {activity.date && <p>Date: {new Date(activity.date).toLocaleDateString()}</p>}
+                  <div key={i} style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    <strong>{activity.name || activity.type || 'Workout'}</strong>
+                    {activity.duration && <span> &middot; {Math.round(activity.duration / 60)} min</span>}
+                    {activity.distance && <span> &middot; {(activity.distance / 1000).toFixed(2)} km</span>}
+                    {activity.calories && <span> &middot; {activity.calories} cal</span>}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="fitness-empty">No workout data found for this period.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No workout data found for this period.</p>
             )}
           </div>
         )}
 
-        {/* Manual proof text */}
+        {/* Caption */}
         <div className="form-group">
-          <label>Proof Description</label>
+          <label className="form-label">Caption</label>
           <textarea
+            className="form-textarea"
             value={proofText}
-            onChange={(e) => setProofText(e.target.value)}
-            placeholder="Describe your workout — what you did, how it went, etc."
+            onChange={(e) => setProofText(e.target.value.slice(0, MAX_CAPTION))}
+            placeholder="Describe your workout &mdash; what you did, how it went..."
             rows="4"
           />
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right', display: 'block', marginTop: 4 }}>
+            {proofText.length}/{MAX_CAPTION}
+          </span>
         </div>
 
-        {/* Media upload (up to 3 screenshots/videos) */}
-        <div className="screenshot-section">
-          <input
-            type="file"
-            accept="image/*,video/*"
-            ref={fileInputRef}
-            onChange={handleNativeFileUpload}
-            style={{ display: 'none' }}
-          />
-          {mediaFiles.length < MAX_MEDIA && (
-            <button
-              onClick={handleMediaUpload}
-              className="screenshot-btn"
-              type="button"
-              disabled={uploading}
-            >
-              {uploading ? 'Uploading...' : `Upload Screenshot or Video (${mediaFiles.length}/${MAX_MEDIA})`}
-            </button>
-          )}
-          {mediaFiles.map((file, i) => (
-            <div key={i} className="screenshot-preview" style={{ position: 'relative' }}>
-              {file.type === 'video' ? (
-                <video src={file.url} controls playsInline style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 12 }} />
-              ) : (
-                <img src={file.url} alt={`Proof ${i + 1}`} />
-              )}
-              <button
-                onClick={() => removeMedia(i)}
-                className="remove-media-btn"
-                type="button"
-              >
-                &times;
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="modal-buttons">
-          <button
-            onClick={handleSubmit}
-            className="submit-btn"
-            disabled={loading || (!proofText && !fitnessData && mediaFiles.length === 0)}
-          >
-            {loading ? 'Submitting...' : 'Submit Proof'}
-          </button>
-          <button onClick={onClose} className="cancel-btn">
-            Cancel
-          </button>
-        </div>
+        {/* Submit button */}
+        <button
+          onClick={handleSubmit}
+          className="btn btn-pink"
+          style={{ width: '100%', marginTop: 8 }}
+          disabled={!canSubmit}
+        >
+          {loading ? 'Submitting...' : 'Submit proof'}
+        </button>
       </div>
     </div>
   );

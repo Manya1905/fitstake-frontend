@@ -12,11 +12,20 @@ function FitnessConnect({ fitnessHook }) {
 
   if (connectedProvider) {
     return (
-      <div className="fitness-connected">
-        <span className="fitness-status">
-          {connectedProvider === 'strava' ? 'Strava' : 'Fitbit'}: {athleteName || 'Connected'}
-        </span>
-        <button onClick={disconnect} className="fitness-disconnect-btn">
+      <div>
+        <div className="drawer-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              backgroundColor: connectedProvider === 'strava' ? '#fc4c02' : 'var(--color-teal)',
+            }} />
+            <span style={{ fontSize: 14, fontWeight: 600 }}>
+              {connectedProvider === 'strava' ? 'Strava' : 'Fitbit'}
+            </span>
+          </div>
+          <span style={{ fontSize: 13, color: 'var(--color-mint)' }}>{athleteName || 'Connected'}</span>
+        </div>
+        <button onClick={disconnect} className="btn btn-ghost-pink btn-sm" style={{ width: '100%', marginTop: 8 }}>
           Disconnect
         </button>
       </div>
@@ -24,20 +33,28 @@ function FitnessConnect({ fitnessHook }) {
   }
 
   return (
-    <div className="fitness-connect">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <button
         onClick={connectStrava}
         disabled={loading}
-        className="fitness-connect-btn strava-btn"
+        className="btn btn-cream"
+        style={{ width: '100%' }}
       >
-        {loading ? 'Connecting...' : 'Connect Strava'}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#fc4c02', display: 'inline-block' }} />
+          {loading ? 'Connecting...' : 'Connect Strava'}
+        </span>
       </button>
       <button
         onClick={connectFitbit}
         disabled={loading}
-        className="fitness-connect-btn fitbit-btn"
+        className="btn btn-teal"
+        style={{ width: '100%' }}
       >
-        {loading ? 'Connecting...' : 'Connect Fitbit'}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--color-teal)', display: 'inline-block' }} />
+          {loading ? 'Connecting...' : 'Connect Fitbit'}
+        </span>
       </button>
     </div>
   );

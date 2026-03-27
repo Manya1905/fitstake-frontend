@@ -1,21 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import toast from 'react-hot-toast';
-import { BACKEND_URL } from './utils/constants';
+import { BACKEND_URL, Phase } from './utils/constants';
 import { useContract } from './hooks/useContract';
 import { useSmartContract } from './hooks/useSmartContract';
 import { useFitness } from './hooks/useFitness';
 import Header from './components/Header';
+import BottomNav from './components/BottomNav';
+import LandingPage from './components/LandingPage';
+import OnboardingSlides from './components/OnboardingSlides';
 import ChallengeList from './components/ChallengeList';
 import CreateChallengeForm from './components/CreateChallengeForm';
 import ProofSubmissionModal from './components/ProofSubmissionModal';
 import ProofViewerPanel from './components/ProofViewerPanel';
-import ProfilePanel from './components/ProfilePanel';
-import FundWallet from './components/FundWallet';
+import ProfileTab from './components/ProfileTab';
+import DashboardHistory from './components/DashboardHistory';
+import TransactionOverlay from './components/TransactionOverlay';
 import './App.css';
 
 function App() {
-  const { authenticated, user } = usePrivy();
+  const { login, authenticated, user } = usePrivy();
   const { contract, usdcContract, address } = useContract();
   const {
     approveAndCreateChallenge,
@@ -30,13 +34,32 @@ function App() {
   } = useSmartContract();
   const fitnessHook = useFitness();
 
+  // Tab navigation
+  const [activeTab, setActiveTab] = useState('active');
+
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Challenge data
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Views
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [proofChallenge, setProofChallenge] = useState(null);
   const [viewChallenge, setViewChallenge] = useState(null);
-  const [showFundWallet, setShowFundWallet] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+
+  // Transaction overlay
+  const [txMessage, setTxMessage] = useState('');
+  const [txVisible, setTxVisible] = useState(false);
+
+  // Onboarding trigger
+  useEffect(() => {
+    if (authenticated && !localStorage.getItem('fitstake_onboarded')) {
+      setShowOnboarding(true);
+    }
+  }, [authenticated]);
+
   const loadChallenges = useCallback(async (silent = false) => {
     if (!contract || !address) return;
 
@@ -52,10 +75,8 @@ function App() {
         const hasSubmitted = await contract.hasSubmittedProof(i, address);
         const hasVoted = await contract.hasVotedAtAll(i, address);
 
-        // Load privacy info
         const [isPrivate, hasInviteCode] = await contract.getChallengePrivacy(i);
 
-        // Load join request status for private challenges
         let hasRequested = false;
         let isApproved = false;
         if (isPrivate) {
@@ -87,7 +108,6 @@ function App() {
         });
       }
 
-      // Sort: active first, then by newest
       challengeList.sort((a, b) => {
         if (a.isDistributed === b.isDistributed) return b.id - a.id;
         return a.isDistributed ? 1 : -1;
@@ -107,7 +127,6 @@ function App() {
     }
   }, [contract, address, loadChallenges]);
 
-  // Auto-refresh challenges every 30 seconds
   useEffect(() => {
     if (!contract || !address) return;
     const interval = setInterval(() => loadChallenges(true), 30000);
@@ -126,106 +145,182 @@ function App() {
     }
   }, [authenticated, address, user]);
 
+  // Challenge filtering for tabs
+  const activeChallenges = challenges.filter((c) => c.hasJoined && !c.isDistributed);
+  const exploreChallenges = challenges.filter((c) => !c.hasJoined && !c.isPrivate && c.phase === Phase.Joining);
+
+  // Handlers with transaction overlay
   const handleJoin = async (challengeId, stakeAmount) => {
     try {
-      setLoading(true);
-      toast.loading('Joining challenge...', { id: 'join' });
-
+      setTxMessage('Joining challenge...');
+      setTxVisible(true);
       await approveAndJoinChallenge(challengeId, stakeAmount);
-
-      toast.success('Joined challenge!', { id: 'join' });
+      toast.success('Joined challenge!');
       await loadChallenges();
     } catch (error) {
       console.error('Error joining challenge:', error);
-      toast.error('Failed: ' + (error.reason || error.message), { id: 'join' });
+      toast.error('Failed: ' + (error.reason || error.message));
     }
-    setLoading(false);
+    setTxVisible(false);
   };
 
   const handleDistribute = async (challengeId) => {
     try {
-      setLoading(true);
-      toast.loading('Distributing rewards...', { id: 'distribute' });
-
+      setTxMessage('Distributing rewards...');
+      setTxVisible(true);
       await smartDistributeRewards(challengeId);
-
-      toast.success('Rewards distributed!', { id: 'distribute' });
+      toast.success('Rewards distributed!');
       await loadChallenges();
     } catch (error) {
       console.error('Error distributing rewards:', error);
-      toast.error('Failed: ' + (error.reason || error.message), { id: 'distribute' });
+      toast.error('Failed: ' + (error.reason || error.message));
     }
-    setLoading(false);
+    setTxVisible(false);
   };
 
   const handleRequestToJoin = async (challengeId) => {
     try {
-      setLoading(true);
-      toast.loading('Requesting to join...', { id: 'request' });
-
+      setTxMessage('Requesting to join...');
+      setTxVisible(true);
       await smartRequestToJoin(challengeId);
-
-      toast.success('Request sent! Waiting for creator approval.', { id: 'request' });
+      toast.success('Request sent! Waiting for creator approval.');
       await loadChallenges();
     } catch (error) {
       console.error('Error requesting to join:', error);
-      toast.error('Failed: ' + (error.reason || error.message), { id: 'request' });
+      toast.error('Failed: ' + (error.reason || error.message));
     }
-    setLoading(false);
+    setTxVisible(false);
   };
+
+  // Unauthenticated: Landing page
+  if (!authenticated) {
+    return (
+      <div className="App">
+        <LandingPage onSignIn={login} />
+      </div>
+    );
+  }
+
+  // First login: Onboarding
+  if (showOnboarding) {
+    return (
+      <div className="App">
+        <OnboardingSlides
+          address={address}
+          fitnessHook={fitnessHook}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      </div>
+    );
+  }
+
+  // Create challenge: full-screen
+  if (showCreateForm) {
+    return (
+      <div className="App">
+        <CreateChallengeForm
+          onCreateChallenge={approveAndCreateChallenge}
+          onCreated={async (inviteCode) => {
+            setShowCreateForm(false);
+            if (inviteCode && contract) {
+              try {
+                const count = await contract.challengeCount();
+                localStorage.setItem(`fitstake_invite_${Number(count)}`, inviteCode);
+              } catch (err) {
+                console.error('Failed to store invite code:', err);
+              }
+            }
+            loadChallenges();
+          }}
+          onCancel={() => setShowCreateForm(false)}
+        />
+        <TransactionOverlay message={txMessage} visible={txVisible} />
+      </div>
+    );
+  }
+
+  // Proof submission: full-screen overlay
+  if (proofChallenge) {
+    return (
+      <div className="App">
+        <ProofSubmissionModal
+          challenge={proofChallenge}
+          onSubmitProof={smartSubmitProof}
+          fitnessHook={fitnessHook}
+          onClose={() => setProofChallenge(null)}
+          onSubmitted={() => {
+            setProofChallenge(null);
+            loadChallenges();
+          }}
+        />
+        <TransactionOverlay message={txMessage} visible={txVisible} />
+      </div>
+    );
+  }
+
+  // Proof viewer: full-screen overlay
+  if (viewChallenge) {
+    return (
+      <div className="App">
+        <ProofViewerPanel
+          challenge={viewChallenge}
+          contract={contract}
+          address={address}
+          onCastVotes={smartCastVotes}
+          onClose={() => setViewChallenge(null)}
+          onVoted={() => {
+            setViewChallenge(null);
+            loadChallenges();
+          }}
+          onApproveRequest={smartApproveJoinRequest}
+          onRejectRequest={smartRejectJoinRequest}
+          onJoinWithCode={smartJoinWithInviteCode}
+          onRefresh={loadChallenges}
+        />
+        <TransactionOverlay message={txMessage} visible={txVisible} />
+      </div>
+    );
+  }
 
   return (
     <div className="App">
       <Header
         usdcContract={usdcContract}
         address={address}
-        fitnessHook={fitnessHook}
-        onOpenProfile={() => setShowProfile(true)}
+        onOpenProfile={() => setActiveTab('profile')}
       />
 
-      {authenticated && address && (
-        <main className="main-content">
-          <div className="actions-bar">
-            <h2>Challenges</h2>
-            <div className="actions-buttons">
-              <button
-                onClick={() => setShowFundWallet(!showFundWallet)}
-                className="fund-toggle-btn"
-              >
+      <main className="main-content">
+        {activeTab === 'active' && (
+          <>
+            <div className="dashboard-actions">
+              <button className="btn btn-neutral btn-sm" onClick={() => setActiveTab('profile')}>
                 Buy USDC
               </button>
-              <button
-                onClick={() => setShowCreateForm(!showCreateForm)}
-                className="create-btn"
-              >
-                {showCreateForm ? 'Cancel' : '+ Create Challenge'}
+              <button className="btn btn-pink btn-sm" onClick={() => setShowCreateForm(true)}>
+                + Create challenge
               </button>
             </div>
-          </div>
-
-          {showFundWallet && <FundWallet address={address} />}
-
-          {showCreateForm && (
-            <CreateChallengeForm
-              onCreateChallenge={approveAndCreateChallenge}
-              onCreated={async (inviteCode) => {
-                setShowCreateForm(false);
-                if (inviteCode && contract) {
-                  try {
-                    const count = await contract.challengeCount();
-                    localStorage.setItem(`fitstake_invite_${Number(count)}`, inviteCode);
-                  } catch (err) {
-                    console.error('Failed to store invite code:', err);
-                  }
-                }
-                loadChallenges();
-              }}
-              onCancel={() => setShowCreateForm(false)}
+            <ChallengeList
+              challenges={activeChallenges}
+              loading={loading}
+              onJoin={handleJoin}
+              onSubmitProof={(challenge) => setProofChallenge(challenge)}
+              onVote={(challenge) => setViewChallenge(challenge)}
+              onDistribute={handleDistribute}
+              onViewDetail={(challenge) => setViewChallenge(challenge)}
+              onRequestToJoin={handleRequestToJoin}
+              emptyTitle="No active challenges"
+              emptyBody="Join or create a challenge to get started!"
+              emptyCta="+ Create a challenge"
+              onEmptyCta={() => setShowCreateForm(true)}
             />
-          )}
+          </>
+        )}
 
+        {activeTab === 'explore' && (
           <ChallengeList
-            challenges={challenges}
+            challenges={exploreChallenges}
             loading={loading}
             onJoin={handleJoin}
             onSubmitProof={(challenge) => setProofChallenge(challenge)}
@@ -233,49 +328,28 @@ function App() {
             onDistribute={handleDistribute}
             onViewDetail={(challenge) => setViewChallenge(challenge)}
             onRequestToJoin={handleRequestToJoin}
+            emptyTitle="No open challenges yet"
+            emptyBody="Be the first! Create a challenge and invite friends to join, or check back soon."
+            emptyCta="+ Create a challenge"
+            onEmptyCta={() => setShowCreateForm(true)}
           />
+        )}
 
-          {proofChallenge && (
-            <ProofSubmissionModal
-              challenge={proofChallenge}
-              onSubmitProof={smartSubmitProof}
-              fitnessHook={fitnessHook}
-              onClose={() => setProofChallenge(null)}
-              onSubmitted={() => {
-                setProofChallenge(null);
-                loadChallenges();
-              }}
-            />
-          )}
+        {activeTab === 'history' && (
+          <DashboardHistory contract={contract} address={address} />
+        )}
 
-          {viewChallenge && (
-            <ProofViewerPanel
-              challenge={viewChallenge}
-              contract={contract}
-              address={address}
-              onCastVotes={smartCastVotes}
-              onClose={() => setViewChallenge(null)}
-              onVoted={() => {
-                setViewChallenge(null);
-                loadChallenges();
-              }}
-              onApproveRequest={smartApproveJoinRequest}
-              onRejectRequest={smartRejectJoinRequest}
-              onJoinWithCode={smartJoinWithInviteCode}
-              onRefresh={loadChallenges}
-            />
-          )}
+        {activeTab === 'profile' && (
+          <ProfileTab
+            usdcContract={usdcContract}
+            address={address}
+            fitnessHook={fitnessHook}
+          />
+        )}
+      </main>
 
-          {showProfile && (
-            <ProfilePanel
-              contract={contract}
-              address={address}
-              userEmail={user?.email?.address}
-              onClose={() => setShowProfile(false)}
-            />
-          )}
-        </main>
-      )}
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <TransactionOverlay message={txMessage} visible={txVisible} />
     </div>
   );
 }

@@ -61,12 +61,30 @@ export const PHASE_LABELS = {
 };
 
 export const PHASE_COLORS = {
-  [Phase.Joining]: '#4caf50',
-  [Phase.Active]: '#2196f3',
-  [Phase.ProofSubmission]: '#ff9800',
-  [Phase.Voting]: '#9c27b0',
-  [Phase.GracePeriod]: '#ff5722',
-  [Phase.Completed]: '#607d8b',
+  [Phase.Joining]: '#7ecda0',
+  [Phase.Active]: '#f4a46a',
+  [Phase.ProofSubmission]: '#f4a46a',
+  [Phase.Voting]: '#b8a9e0',
+  [Phase.GracePeriod]: '#b8a9e0',
+  [Phase.Completed]: '#a09d98',
+};
+
+export const PHASE_BADGE_CLASS = {
+  [Phase.Joining]: 'badge-joined',
+  [Phase.Active]: 'badge-inprogress',
+  [Phase.ProofSubmission]: 'badge-inprogress',
+  [Phase.Voting]: 'badge-voting',
+  [Phase.GracePeriod]: 'badge-voting',
+  [Phase.Completed]: 'badge-completed',
+};
+
+export const PHASE_CARD_CLASS = {
+  [Phase.Joining]: 'card',
+  [Phase.Active]: 'card-progress',
+  [Phase.ProofSubmission]: 'card-progress',
+  [Phase.Voting]: 'card-voting',
+  [Phase.GracePeriod]: 'card-voting',
+  [Phase.Completed]: 'card-completed',
 };
 
 // USDC ABI for viem (used by smart wallet write operations)

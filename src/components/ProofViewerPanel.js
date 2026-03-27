@@ -11,7 +11,6 @@ function normalizeProof(raw) {
   } catch {
     parsed = { text: raw };
   }
-  // Convert old single-media format to array
   if (parsed.media && typeof parsed.media === 'string') {
     parsed.media = [{ url: parsed.media, type: parsed.mediaType || 'image' }];
   }
@@ -36,9 +35,9 @@ function ProofViewerPanel({
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [joiningWithCode, setJoiningWithCode] = useState(false);
   const [myVoteStats, setMyVoteStats] = useState(null);
+  const [showBatchConfirm, setShowBatchConfirm] = useState(false);
 
-  // Vote sheet state
-  const [sheetChoice, setSheetChoice] = useState(null); // 'approved' | 'rejected'
+  const [sheetChoice, setSheetChoice] = useState(null);
   const [sheetReason, setSheetReason] = useState('');
   const [isChangingVote, setIsChangingVote] = useState(false);
 
@@ -53,7 +52,6 @@ function ProofViewerPanel({
     if (!contract) return;
     if (!silent) setLoading(true);
     try {
-      // Retry getParticipants up to 3 times (handles chain connection delays)
       let addrs;
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
@@ -66,7 +64,6 @@ function ProofViewerPanel({
         }
       }
 
-      // Fetch emails for all participants
       let emailMap = {};
       try {
         const emailRes = await fetch(`${BACKEND_URL}/api/users/lookup`, {
@@ -80,7 +77,6 @@ function ProofViewerPanel({
         console.error('Error fetching user emails:', err);
       }
 
-      // Fetch backend votes for this user
       let backendVotes = {};
       try {
         const res = await fetch(`${BACKEND_URL}/api/votes/${challenge.id}/${address}`);
@@ -100,7 +96,7 @@ function ProofViewerPanel({
 
       for (const addr of addrs) {
         const isCurrentUser = addr.toLowerCase() === address.toLowerCase();
-        const isCreator = addr.toLowerCase() === challenge.creator.toLowerCase();
+        const isChallengeCreator = addr.toLowerCase() === challenge.creator.toLowerCase();
         const hasSubmitted = await contract.hasSubmittedProof(challenge.id, addr);
 
         let proofData = null;
@@ -115,7 +111,6 @@ function ProofViewerPanel({
           }));
         }
 
-        // Check on-chain vote status (skip self)
         let votedOnChain = false;
         if (!isCurrentUser) {
           try {
@@ -129,7 +124,6 @@ function ProofViewerPanel({
           }
         }
 
-        // Merge backend vote data into local votes
         const addrLower = addr.toLowerCase();
         if (backendVotes[addrLower]) {
           localV[addrLower] = backendVotes[addrLower];
@@ -142,7 +136,7 @@ function ProofViewerPanel({
           displayAddress: email || `${addr.slice(0, 6)}...${addr.slice(-4)}`,
           email,
           isCurrentUser,
-          isCreator,
+          isCreator: isChallengeCreator,
           hasSubmitted,
           caption: proofData?.text || null,
           proofs,
@@ -151,7 +145,6 @@ function ProofViewerPanel({
         });
       }
 
-      // Load vote stats for current user's own proof
       try {
         const [forVotes, againstVotes] = await contract.getVoteCounts(challenge.id, address);
         const votesRes = await fetch(`${BACKEND_URL}/api/votes/${challenge.id}/for/${address}`);
@@ -172,12 +165,10 @@ function ProofViewerPanel({
       setOnChainVotes(chainVotes);
       setLocalVotes(localV);
 
-      // Load join requests if creator of private challenge
       if (isCreator && challenge.isPrivate) {
         try {
           const requests = await contract.getJoinRequests(challenge.id);
           setJoinRequests([...requests]);
-          // Fetch emails for join request addresses too
           if (requests.length > 0) {
             try {
               const reqEmailRes = await fetch(`${BACKEND_URL}/api/users/lookup`, {
@@ -209,13 +200,11 @@ function ProofViewerPanel({
     loadParticipants();
   }, [loadParticipants]);
 
-  // Auto-refresh participants every 15 seconds
   useEffect(() => {
     const interval = setInterval(() => loadParticipants(true), 15000);
     return () => clearInterval(interval);
   }, [loadParticipants]);
 
-  // Count pending votes (local but not yet on-chain)
   const pendingVoteCount = Object.keys(localVotes).filter(
     (addr) => !onChainVotes[addr]
   ).length;
@@ -273,7 +262,6 @@ function ProofViewerPanel({
 
     const targetAddr = selectedParticipant.address.toLowerCase();
 
-    // Save to backend
     try {
       await fetch(`${BACKEND_URL}/api/votes`, {
         method: 'POST',
@@ -290,7 +278,6 @@ function ProofViewerPanel({
       console.error('Error saving vote to backend:', err);
     }
 
-    // Update local state
     setLocalVotes((prev) => ({
       ...prev,
       [targetAddr]: {
@@ -305,6 +292,7 @@ function ProofViewerPanel({
   // ─── Batch Submit ──────────────────────────────────────
 
   const handleBatchSubmit = async () => {
+    setShowBatchConfirm(false);
     const pending = Object.entries(localVotes).filter(
       ([addr]) => !onChainVotes[addr]
     );
@@ -324,7 +312,6 @@ function ProofViewerPanel({
 
       toast.success('Votes submitted!', { id: 'batchVote' });
 
-      // Mark as on-chain
       const newChain = { ...onChainVotes };
       for (const addr of addresses) {
         newChain[addr] = true;
@@ -369,47 +356,57 @@ function ProofViewerPanel({
     loadParticipants();
   };
 
-  // ─── Confirm button state ─────────────────────────────
-
   const isConfirmEnabled = sheetChoice === 'approved' ||
     (sheetChoice === 'rejected' && sheetReason.length >= 20);
-
-  const confirmButtonLabel = sheetChoice === 'rejected' ? 'Confirm rejection' : 'Confirm vote';
 
   // ─── Render ────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="proof-panel" onClick={(e) => e.stopPropagation()}>
-          <p style={{ padding: '2rem', textAlign: 'center' }}>Loading participants...</p>
+      <div className="proof-viewer-screen">
+        <div className="nav">
+          <button className="btn-back" onClick={onClose}>&larr; Back</button>
+          <span className="nav-title">Roster</span>
+          <div style={{ width: 60 }} />
+        </div>
+        <div style={{ padding: 24, textAlign: 'center' }}>
+          <div className="skeleton" style={{ height: 60, borderRadius: 12, marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 60, borderRadius: 12, marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 60, borderRadius: 12 }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="proof-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="proof-viewer-screen">
 
-        {/* ═══ ROSTER SCREEN ═══ */}
-        {screen === 'roster' && (
-          <>
-            <div className="proof-panel-header">
-              <h2>{challenge.goal}</h2>
-              <p className="proof-panel-meta">
+      {/* ═══ ROSTER SCREEN ═══ */}
+      {screen === 'roster' && (
+        <>
+          <div className="nav">
+            <button className="btn-back" onClick={onClose}>&larr; Back</button>
+            <span className="nav-title">Roster</span>
+            <div style={{ width: 60 }} />
+          </div>
+
+          <div className="proof-viewer-body">
+            {/* Challenge header */}
+            <div style={{ marginBottom: 14 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{challenge.goal}</h2>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                 {participants.length} participant{participants.length !== 1 ? 's' : ''} &middot; {formatUSDC(challenge.totalStaked)} USDC pot
               </p>
             </div>
 
-            {/* Creator invite code display */}
+            {/* Creator invite code */}
             {storedInviteCode && (
-              <div className="creator-invite-code-section">
-                <h4>Your Invite Code</h4>
-                <div className="creator-invite-code-row">
-                  <code className="invite-code-display">{storedInviteCode}</code>
+              <div className="invite-code-box">
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px' }}>Your Invite Code</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <code className="invite-code">{storedInviteCode}</code>
                   <button
-                    className="copy-code-btn"
+                    className="btn btn-neutral btn-sm"
                     onClick={() => {
                       navigator.clipboard.writeText(storedInviteCode);
                       setCodeCopied(true);
@@ -419,25 +416,26 @@ function ProofViewerPanel({
                     {codeCopied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <p className="form-hint">Share this code with friends so they can join your challenge.</p>
               </div>
             )}
 
             {/* Join with invite code */}
             {challenge.isPrivate && challenge.hasInviteCode && !challenge.hasJoined && challenge.phase === Phase.Joining && (
-              <div className="invite-code-section">
-                <h4>Join with Invite Code</h4>
-                <div className="invite-code-input-row">
+              <div className="card" style={{ marginBottom: 14 }}>
+                <p className="section-label">Join with Invite Code</p>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <input
+                    className="form-input"
                     type="text"
                     value={inviteCodeInput}
                     onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
                     placeholder="Enter invite code"
+                    style={{ flex: 1 }}
                   />
                   <button
                     onClick={handleJoinWithCode}
                     disabled={joiningWithCode}
-                    className="join-btn"
+                    className="btn btn-teal btn-sm"
                   >
                     {joiningWithCode ? 'Joining...' : 'Join'}
                   </button>
@@ -445,7 +443,7 @@ function ProofViewerPanel({
               </div>
             )}
 
-            {/* Join requests (creator of private challenge) */}
+            {/* Join requests */}
             {isCreator && challenge.isPrivate && (
               <JoinRequestsSection
                 challenge={challenge}
@@ -456,6 +454,7 @@ function ProofViewerPanel({
               />
             )}
 
+            {/* Participant roster */}
             <div className="roster-list">
               {participants.map((p) => {
                 const vote = getMyVote(p.address);
@@ -469,8 +468,8 @@ function ProofViewerPanel({
                     onClick={() => isClickable && handleRowClick(p)}
                   >
                     <div
-                      className="roster-avatar"
-                      style={{ backgroundColor: getAvatarColor(p.address) }}
+                      className="avatar"
+                      style={{ backgroundColor: getAvatarColor(p.address), fontSize: 12, width: 36, height: 36 }}
                     >
                       {getInitials(p.address, p.email)}
                     </div>
@@ -479,18 +478,18 @@ function ProofViewerPanel({
                       <span className="roster-address">{p.displayAddress}</span>
                       <div className="roster-sub">
                         {p.hasSubmitted
-                          ? `${p.proofs.length || 1} proof${p.proofs.length !== 1 ? 's' : ''} submitted`
-                          : 'No proof submitted'}
-                        {p.isCurrentUser && <span className="roster-badge badge-you">You</span>}
-                        {p.isCreator && <span className="roster-badge badge-creator">Creator</span>}
+                          ? <span style={{ color: 'var(--color-mint)' }}>{p.proofs.length || 1} proof{p.proofs.length !== 1 ? 's' : ''}</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>No proof</span>}
+                        {p.isCurrentUser && <span className="badge badge-you">You</span>}
+                        {p.isCreator && <span className="badge badge-creator">Creator</span>}
                         {vote && vote.vote === 'approved' && (
-                          <span className={`vote-pill vote-pill-approved ${isOnChain ? '' : 'pending'}`}>
-                            &#10003; Approved{!isOnChain ? ' (pending)' : ''}
+                          <span className={`badge ${isOnChain ? 'badge-voted' : 'badge-staged'}`}>
+                            &#10003; {isOnChain ? 'Approved' : 'Staged'}
                           </span>
                         )}
                         {vote && vote.vote === 'rejected' && (
-                          <span className={`vote-pill vote-pill-rejected ${isOnChain ? '' : 'pending'}`}>
-                            &#10005; Rejected{!isOnChain ? ' (pending)' : ''}
+                          <span className={`badge ${isOnChain ? 'badge-lost' : 'badge-staged'}`}>
+                            &#10005; {isOnChain ? 'Rejected' : 'Staged'}
                           </span>
                         )}
                       </div>
@@ -502,89 +501,131 @@ function ProofViewerPanel({
               })}
             </div>
 
-            {/* Batch submit bar */}
-            {canVote && pendingVoteCount > 0 && (
-              <div className="batch-submit-bar">
-                <button
-                  onClick={handleBatchSubmit}
-                  className="batch-submit-btn"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Submitting...' : `Submit ${pendingVoteCount} vote${pendingVoteCount !== 1 ? 's' : ''}`}
-                </button>
-              </div>
-            )}
-
-            <div className="proof-panel-close">
-              <button onClick={onClose} className="cancel-btn" style={{ width: '100%' }}>Close</button>
-            </div>
-          </>
-        )}
-
-        {/* ═══ PROOF VIEW SCREEN ═══ */}
-        {screen === 'proof' && selectedParticipant && (
-          <>
-            <button className="proof-back-btn" onClick={handleBackToRoster}>
-              &larr; back to roster
+            {/* Close button */}
+            <button className="btn btn-ghost-pink" onClick={onClose} style={{ width: '100%', marginTop: 14 }}>
+              Close
             </button>
+          </div>
 
-            <div className="proof-user-header">
+          {/* Batch vote bar */}
+          {canVote && pendingVoteCount > 0 && (
+            <div className="batch-vote-bar">
+              <span className="batch-vote-count">{pendingVoteCount} vote{pendingVoteCount !== 1 ? 's' : ''} staged</span>
+              <button
+                className="btn btn-pink btn-sm"
+                onClick={() => setShowBatchConfirm(true)}
+                disabled={submitting}
+              >
+                {submitting ? 'Submitting...' : `Submit ${pendingVoteCount} vote${pendingVoteCount !== 1 ? 's' : ''}`}
+              </button>
+            </div>
+          )}
+
+          {/* Batch confirm dialog */}
+          {showBatchConfirm && (
+            <div className="confirm-overlay" onClick={() => setShowBatchConfirm(false)}>
+              <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+                <h3 style={{ margin: '0 0 8px' }}>Submit votes on-chain?</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 18px' }}>
+                  This will submit {pendingVoteCount} vote{pendingVoteCount !== 1 ? 's' : ''} to the blockchain. This action cannot be undone.
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn btn-neutral" style={{ flex: 1 }} onClick={() => setShowBatchConfirm(false)}>Cancel</button>
+                  <button className="btn btn-pink" style={{ flex: 1 }} onClick={handleBatchSubmit}>Submit votes</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ═══ PROOF VIEW SCREEN ═══ */}
+      {screen === 'proof' && selectedParticipant && (
+        <>
+          <div className="nav">
+            <button className="btn-back" onClick={handleBackToRoster}>&larr; Roster</button>
+            <span className="nav-title">Proof</span>
+            <div style={{ width: 60 }} />
+          </div>
+
+          <div className="proof-viewer-body">
+            {/* Submitter info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div
-                className="roster-avatar"
+                className="avatar"
                 style={{ backgroundColor: getAvatarColor(selectedParticipant.address) }}
               >
                 {getInitials(selectedParticipant.address, selectedParticipant.email)}
               </div>
               <div>
-                <span className="roster-address">{selectedParticipant.displayAddress}</span>
-                {selectedParticipant.isCreator && (
-                  <span className="roster-badge badge-creator">Creator</span>
-                )}
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{selectedParticipant.displayAddress}</span>
+                <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                  {selectedParticipant.isCurrentUser && <span className="badge badge-you">You</span>}
+                  {selectedParticipant.isCreator && <span className="badge badge-creator">Creator</span>}
+                </div>
               </div>
             </div>
 
-            {/* Vote stats for your own proof */}
-            {selectedParticipant.isCurrentUser && (
-              <div className="vote-stats-section">
-                <h4>Your Vote Stats</h4>
-                {myVoteStats && (myVoteStats.forVotes > 0 || myVoteStats.againstVotes > 0) ? (
+            {/* Own proof: vote stats */}
+            {selectedParticipant.isCurrentUser && myVoteStats && (
+              <div className="card" style={{ marginBottom: 14 }}>
+                <p className="section-label">Your Vote Stats</p>
+                {(myVoteStats.forVotes > 0 || myVoteStats.againstVotes > 0) ? (
                   <>
-                    <div className="vote-stats-counts">
-                      <span className="vote-stats-approved">
-                        &#10003; {myVoteStats.forVotes} Approved
+                    {/* Vote stat bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 13, color: 'var(--color-mint)', fontWeight: 600 }}>
+                        {myVoteStats.forVotes}
                       </span>
-                      <span className="vote-stats-rejected">
-                        &#10005; {myVoteStats.againstVotes} Rejected
+                      <div className="vote-stat-bar-track">
+                        <div
+                          className="vote-stat-bar-fill"
+                          style={{
+                            width: `${(myVoteStats.forVotes / (myVoteStats.forVotes + myVoteStats.againstVotes)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: 13, color: 'var(--color-pink)', fontWeight: 600 }}>
+                        {myVoteStats.againstVotes}
                       </span>
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
+                      <span>Approved</span>
+                      <span>Rejected</span>
+                    </div>
+                    {/* Rejection reasons */}
                     {myVoteStats.rejectionReasons.length > 0 && (
-                      <div className="vote-stats-reasons">
-                        <p className="vote-stats-reasons-label">Rejection reasons:</p>
+                      <div style={{ marginTop: 12 }}>
+                        <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6 }}>Rejection reasons (anonymous)</p>
                         {myVoteStats.rejectionReasons.map((reason, i) => (
-                          <div key={i} className="rejection-card">
-                            <p className="rejection-reason">"{reason}"</p>
+                          <div key={i} className="rejection-reason-item">
+                            <p style={{ margin: 0, fontSize: 13, fontStyle: 'italic' }}>"{reason}"</p>
                           </div>
                         ))}
                       </div>
                     )}
                   </>
                 ) : (
-                  <p className="vote-stats-empty">No votes received yet</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No votes received yet</p>
                 )}
               </div>
             )}
 
+            {/* Proof caption */}
             {selectedParticipant.caption && (
-              <p className="proof-caption">{selectedParticipant.caption}</p>
+              <div className="card" style={{ marginBottom: 14, fontStyle: 'italic', fontSize: 14, color: 'var(--text-secondary)' }}>
+                "{selectedParticipant.caption}"
+              </div>
             )}
 
+            {/* Proof media */}
             <div className="proof-media-list">
               {selectedParticipant.proofs.length === 0 && (
-                <p className="proof-empty-text">No media submitted</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No media submitted</p>
               )}
               {selectedParticipant.proofs.map((proof, i) => (
                 <div key={i} className="proof-media-item">
-                  <span className="proof-label-badge">{proof.label}</span>
+                  <span className="badge badge-proof" style={{ marginBottom: 6, display: 'inline-block' }}>{proof.label}</span>
                   {proof.type === 'video' ? (
                     <video
                       src={proof.url}
@@ -598,9 +639,7 @@ function ProofViewerPanel({
                       src={proof.url}
                       alt={proof.label}
                       className="proof-media-img"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
+                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   )}
                 </div>
@@ -609,45 +648,60 @@ function ProofViewerPanel({
 
             {/* Fitness data */}
             {selectedParticipant.fitness && selectedParticipant.fitness.length > 0 && (
-              <div className="proof-fitness-data">
-                <strong>Fitness data:</strong>
+              <div className="fitness-data-card" style={{ marginTop: 14 }}>
+                <strong style={{ fontSize: 13 }}>Fitness data</strong>
                 {selectedParticipant.fitness.map((a, i) => (
-                  <span key={i} className="proof-fitness-item">
-                    {a.name || a.type || 'Workout'}
-                    {a.duration ? ` — ${Math.round(a.duration / 60)} min` : ''}
-                    {a.distance ? ` — ${(a.distance / 1000).toFixed(2)} km` : ''}
-                    {a.calories ? ` — ${a.calories} cal` : ''}
-                  </span>
+                  <div key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    <strong>{a.name || a.type || 'Workout'}</strong>
+                    {a.duration ? ` · ${Math.round(a.duration / 60)} min` : ''}
+                    {a.distance ? ` · ${(a.distance / 1000).toFixed(2)} km` : ''}
+                    {a.calories ? ` · ${a.calories} cal` : ''}
+                  </div>
                 ))}
               </div>
             )}
 
-            {/* Vote action bar (hidden for your own proof) */}
+            {/* Vote action — others' proof */}
             {canVote && !selectedParticipant.isCurrentUser && (
-              <div className="vote-action-bar">
+              <div style={{ marginTop: 18 }}>
                 {(() => {
                   const vote = getMyVote(selectedParticipant.address);
                   const isOnChain = onChainVotes[selectedParticipant.address.toLowerCase()];
 
                   if (!vote) {
                     return (
-                      <button className="cast-vote-btn" onClick={() => openVoteSheet(false)}>
-                        Cast vote
-                      </button>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <button
+                          className="btn btn-teal"
+                          style={{ flex: 1 }}
+                          onClick={() => { setSheetChoice('approved'); openVoteSheet(false); }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="btn btn-teal"
+                          style={{ flex: 1 }}
+                          onClick={() => { setSheetChoice('rejected'); openVoteSheet(false); }}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     );
                   }
 
                   return (
-                    <div className="vote-status-display">
-                      <p className={`vote-status-text ${vote.vote === 'approved' ? 'approved' : 'rejected'}`}>
+                    <div className="card">
+                      <p style={{ fontSize: 14, fontWeight: 600, color: vote.vote === 'approved' ? 'var(--color-mint)' : 'var(--color-pink)' }}>
                         Your vote: {vote.vote === 'approved' ? '\u2713 Approved' : '\u2715 Rejected'}
-                        {isOnChain && ' (on-chain)'}
+                        {isOnChain && <span className="badge badge-voted" style={{ marginLeft: 6 }}>On-chain</span>}
                       </p>
                       {vote.vote === 'rejected' && vote.reason && (
-                        <p className="vote-reason-text">{vote.reason}</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: 4 }}>
+                          "{vote.reason}"
+                        </p>
                       )}
                       {!isOnChain && (
-                        <button className="change-vote-btn" onClick={() => openVoteSheet(true)}>
+                        <button className="btn btn-neutral btn-sm" onClick={() => openVoteSheet(true)} style={{ marginTop: 8 }}>
                           Change vote
                         </button>
                       )}
@@ -656,78 +710,116 @@ function ProofViewerPanel({
                 })()}
               </div>
             )}
-          </>
-        )}
+          </div>
 
-        {/* ═══ VOTE CONFIRMATION SHEET ═══ */}
-        {showVoteSheet && (
-          <div className="vote-sheet-overlay" onClick={closeVoteSheet}>
-            <div className="vote-sheet" onClick={(e) => e.stopPropagation()}>
-              <h3>Cast your vote</h3>
-              <p className="vote-sheet-subtitle">
-                {isChangingVote
-                  ? 'Update your vote for this participant.'
-                  : 'Did this participant complete the challenge?'}
-              </p>
+          {/* Batch vote bar on proof screen too */}
+          {canVote && pendingVoteCount > 0 && (
+            <div className="batch-vote-bar">
+              <span className="batch-vote-count">{pendingVoteCount} vote{pendingVoteCount !== 1 ? 's' : ''} staged</span>
+              <button
+                className="btn btn-pink btn-sm"
+                onClick={() => setShowBatchConfirm(true)}
+                disabled={submitting}
+              >
+                Submit {pendingVoteCount} vote{pendingVoteCount !== 1 ? 's' : ''}
+              </button>
+            </div>
+          )}
 
-              <div className="vote-option-cards">
-                <div
-                  className={`vote-option-card ${sheetChoice === 'approved' ? 'selected-approve' : ''}`}
-                  onClick={() => setSheetChoice('approved')}
-                >
-                  <span className="vote-option-icon">&#10003;</span>
-                  <strong>Approve</strong>
-                  <span className="vote-option-desc">Valid proof</span>
-                </div>
-                <div
-                  className={`vote-option-card ${sheetChoice === 'rejected' ? 'selected-reject' : ''}`}
-                  onClick={() => setSheetChoice('rejected')}
-                >
-                  <span className="vote-option-icon">&#10005;</span>
-                  <strong>Reject</strong>
-                  <span className="vote-option-desc">Not valid</span>
+          {/* Batch confirm on proof screen */}
+          {showBatchConfirm && (
+            <div className="confirm-overlay" onClick={() => setShowBatchConfirm(false)}>
+              <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+                <h3 style={{ margin: '0 0 8px' }}>Submit votes on-chain?</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 18px' }}>
+                  This will submit {pendingVoteCount} vote{pendingVoteCount !== 1 ? 's' : ''} to the blockchain.
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn btn-neutral" style={{ flex: 1 }} onClick={() => setShowBatchConfirm(false)}>Cancel</button>
+                  <button className="btn btn-pink" style={{ flex: 1 }} onClick={handleBatchSubmit}>Submit votes</button>
                 </div>
               </div>
+            </div>
+          )}
+        </>
+      )}
 
-              {/* Rejection reason field */}
-              <div className={`vote-reason-field ${sheetChoice === 'rejected' ? 'open' : ''}`}>
-                <label className="vote-reason-label">Why is this proof invalid? (required)</label>
+      {/* ═══ VOTE CONFIRMATION SHEET ═══ */}
+      {showVoteSheet && (
+        <div className="confirm-overlay" onClick={closeVoteSheet}>
+          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 360 }}>
+            <h3 style={{ margin: '0 0 6px' }}>
+              {sheetChoice === 'rejected' ? 'Reject proof' : sheetChoice === 'approved' ? 'Approve proof' : 'Cast your vote'}
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+              {isChangingVote
+                ? 'Update your vote for this participant.'
+                : sheetChoice === 'rejected'
+                  ? 'Please explain why this proof is invalid.'
+                  : 'Confirm that this proof is valid.'}
+            </p>
+
+            {/* Choice cards — only show if no pre-selection */}
+            {!sheetChoice && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                <div
+                  className="card"
+                  style={{ flex: 1, textAlign: 'center', cursor: 'pointer', border: '2px solid var(--color-teal)' }}
+                  onClick={() => setSheetChoice('approved')}
+                >
+                  <span style={{ fontSize: 22 }}>&#10003;</span>
+                  <p style={{ fontSize: 13, fontWeight: 600, margin: '4px 0 0' }}>Approve</p>
+                </div>
+                <div
+                  className="card"
+                  style={{ flex: 1, textAlign: 'center', cursor: 'pointer', border: '2px solid var(--color-pink)' }}
+                  onClick={() => setSheetChoice('rejected')}
+                >
+                  <span style={{ fontSize: 22 }}>&#10005;</span>
+                  <p style={{ fontSize: 13, fontWeight: 600, margin: '4px 0 0' }}>Reject</p>
+                </div>
+              </div>
+            )}
+
+            {/* Rejection reason */}
+            {sheetChoice === 'rejected' && (
+              <div style={{ marginBottom: 14 }}>
+                <label className="form-label">Why is this proof invalid?</label>
                 <textarea
-                  className="vote-reason-textarea"
+                  className="form-textarea"
                   value={sheetReason}
                   onChange={(e) => setSheetReason(e.target.value)}
                   placeholder="Explain why this proof doesn't meet the challenge requirements..."
                   rows="3"
                 />
-                <span className={`vote-char-counter ${sheetReason.length < 20 ? 'under' : 'met'}`}>
+                <span style={{
+                  fontSize: 11,
+                  color: sheetReason.length < 20 ? 'var(--color-pink)' : 'var(--color-mint)',
+                  display: 'block', textAlign: 'right', marginTop: 4,
+                }}>
                   {sheetReason.length < 20
                     ? `${sheetReason.length} / 20 min`
                     : `${sheetReason.length} chars \u2713`}
                 </span>
               </div>
+            )}
 
-              <div className="vote-sheet-buttons">
-                <button className="vote-sheet-cancel" onClick={closeVoteSheet}>
-                  Cancel
-                </button>
-                <button
-                  className="vote-sheet-confirm"
-                  disabled={!isConfirmEnabled}
-                  onClick={confirmVote}
-                  style={{
-                    backgroundColor: isConfirmEnabled
-                      ? (sheetChoice === 'rejected' ? '#991b1b' : '#065f46')
-                      : '#ccc',
-                    color: isConfirmEnabled ? 'white' : '#888',
-                  }}
-                >
-                  {confirmButtonLabel}
-                </button>
-              </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-neutral" style={{ flex: 1 }} onClick={closeVoteSheet}>
+                Cancel
+              </button>
+              <button
+                className={`btn ${sheetChoice === 'rejected' ? 'btn-danger' : 'btn-teal'}`}
+                style={{ flex: 1 }}
+                disabled={!isConfirmEnabled}
+                onClick={confirmVote}
+              >
+                Stage vote
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

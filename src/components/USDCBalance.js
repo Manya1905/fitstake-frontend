@@ -16,16 +16,14 @@ function USDCBalance({ usdcContract, address }) {
 
   useEffect(() => {
     fetchBalance();
-    const interval = setInterval(fetchBalance, 30000); // Poll every 30s
+    const interval = setInterval(fetchBalance, 30000);
     return () => clearInterval(interval);
   }, [fetchBalance]);
 
   if (balance === null) return null;
 
   return (
-    <div className="usdc-balance">
-      {formatUSDC(balance)} USDC
-    </div>
+    <span className="pill pill-green">{formatUSDC(balance)} USDC</span>
   );
 }
 

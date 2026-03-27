@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFundWallet } from '@privy-io/react-auth';
 
 function FundWallet({ address }) {
   const { fundWallet } = useFundWallet();
+  const [copied, setCopied] = useState(false);
 
   if (!address) return null;
 
@@ -17,25 +18,26 @@ function FundWallet({ address }) {
     });
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="fund-wallet">
-      <button onClick={handleFund} className="fund-btn">
+    <div>
+      <button onClick={handleFund} className="btn btn-pink" style={{ width: '100%', marginBottom: 10 }}>
         Buy USDC
       </button>
-      <p className="fund-hint">
-        Purchase USDC with your credit card, or send USDC on Base to your wallet:
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px' }}>
+        Or send USDC on Base to your wallet:
       </p>
-      <p className="wallet-address-row">
-        <code className="wallet-address">{address}</code>
-        <button
-          className="copy-btn"
-          onClick={() => {
-            navigator.clipboard.writeText(address);
-          }}
-        >
-          Copy
+      <div className="wallet-address-row">
+        <code className="wallet-address-sm">{address}</code>
+        <button className="btn btn-neutral btn-sm" onClick={handleCopy}>
+          {copied ? 'Copied!' : 'Copy'}
         </button>
-      </p>
+      </div>
     </div>
   );
 }

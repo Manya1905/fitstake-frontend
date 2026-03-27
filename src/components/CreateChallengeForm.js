@@ -41,7 +41,6 @@ function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
       return;
     }
 
-    // Hash invite code if provided
     let inviteCodeHash = ZERO_BYTES32;
     if (isPrivate && inviteCode.trim()) {
       inviteCodeHash = keccak256(encodePacked(['string'], [inviteCode.trim()]));
@@ -73,130 +72,160 @@ function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="create-form">
-      <h3>Create New Challenge</h3>
-
-      <div className="form-group">
-        <label>Fitness Goal</label>
-        <input
-          type="text"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          placeholder="e.g., Run 5K in under 30 minutes"
-          required
-        />
+    <div className="create-form-screen">
+      {/* Nav bar */}
+      <div className="nav">
+        <button className="btn-back" onClick={onCancel}>&larr; Back</button>
+        <span className="nav-title">New challenge</span>
+        <div style={{ width: 60 }} />
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Join Deadline</label>
-          <input
-            type="datetime-local"
-            value={joinDeadline}
-            onChange={(e) => setJoinDeadline(e.target.value)}
-            required
-          />
-        </div>
+      <div className="create-form-body">
+        <h2 className="create-form-heading">Create New Challenge</h2>
 
-        <div className="form-group">
-          <label>Activity Deadline</label>
-          <input
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Stake Amount (USDC)</label>
-        <input
-          type="number"
-          step="0.01"
-          min="0.01"
-          value={stakeAmount}
-          onChange={(e) => setStakeAmount(e.target.value)}
-          placeholder="10.00"
-          required
-        />
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label>Proof Window (hours)</label>
-          <input
-            type="number"
-            min="1"
-            value={proofWindowHours}
-            onChange={(e) => setProofWindowHours(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Vote Window (hours)</label>
-          <input
-            type="number"
-            min="1"
-            value={voteWindowHours}
-            onChange={(e) => setVoteWindowHours(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Grace Period (hours)</label>
-          <input
-            type="number"
-            min="0"
-            value={graceHours}
-            onChange={(e) => setGraceHours(e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-group private-toggle">
-        <label className="toggle-label">
-          <input
-            type="checkbox"
-            checked={isPrivate}
-            onChange={(e) => setIsPrivate(e.target.checked)}
-          />
-          <span>Make this a private challenge</span>
-        </label>
-      </div>
-
-      {isPrivate && (
-        <div className="form-group invite-code-group">
-          <label>Invite Code (optional)</label>
-          <div className="invite-code-row">
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Fitness Goal</label>
             <input
+              className="form-input"
               type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              placeholder="e.g., ABC12345"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder="e.g., Run 5K in under 30 minutes"
+              required
             />
-            <button type="button" onClick={generateCode} className="generate-code-btn">
-              Generate
+          </div>
+
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label">Join Deadline</label>
+              <input
+                className="form-input"
+                type="datetime-local"
+                value={joinDeadline}
+                onChange={(e) => setJoinDeadline(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Activity Deadline</label>
+              <input
+                className="form-input"
+                type="datetime-local"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Stake Amount (USDC)
+              <span className="tooltip-badge" title="Amount each participant must stake to join. Lost if you fail the challenge.">?</span>
+            </label>
+            <input
+              className="form-input"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={stakeAmount}
+              onChange={(e) => setStakeAmount(e.target.value)}
+              placeholder="10.00"
+              required
+            />
+          </div>
+
+          <div className="form-grid-3">
+            <div className="form-group">
+              <label className="form-label">
+                Proof (hrs)
+                <span className="tooltip-badge" title="Hours after activity deadline to submit proof of completion.">?</span>
+              </label>
+              <input
+                className="form-input"
+                type="number"
+                min="1"
+                value={proofWindowHours}
+                onChange={(e) => setProofWindowHours(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">
+                Vote (hrs)
+                <span className="tooltip-badge" title="Hours after proof deadline for participants to vote on each other's proofs.">?</span>
+              </label>
+              <input
+                className="form-input"
+                type="number"
+                min="1"
+                value={voteWindowHours}
+                onChange={(e) => setVoteWindowHours(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">
+                Grace (hrs)
+                <span className="tooltip-badge" title="Extra hours after voting for late voters. Set to 0 to skip.">?</span>
+              </label>
+              <input
+                className="form-input"
+                type="number"
+                min="0"
+                value={graceHours}
+                onChange={(e) => setGraceHours(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                style={{ accentColor: 'var(--color-teal)' }}
+              />
+              <span>Make this a private challenge</span>
+            </label>
+          </div>
+
+          {isPrivate && (
+            <div className="form-group">
+              <label className="form-label">Invite Code (optional)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="form-input"
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="e.g., ABC12345"
+                  style={{ flex: 1 }}
+                />
+                <button type="button" onClick={generateCode} className="btn btn-neutral btn-sm">
+                  Generate
+                </button>
+              </div>
+              <p className="form-hint">
+                Share this code with friends so they can join directly. Without a code, you'll need to approve each request.
+              </p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+            <button type="submit" disabled={loading} className="btn btn-teal" style={{ width: '100%' }}>
+              {loading ? 'Creating Challenge...' : 'Create Challenge'}
+            </button>
+            <button type="button" onClick={onCancel} className="btn btn-ghost-pink" style={{ width: '100%' }}>
+              Cancel
             </button>
           </div>
-          <p className="form-hint">
-            Share this code with friends so they can join directly. Without a code, you'll need to approve each join request.
-          </p>
-        </div>
-      )}
-
-      <div className="form-buttons">
-        <button type="submit" disabled={loading} className="submit-btn">
-          {loading ? 'Creating Challenge...' : 'Create Challenge'}
-        </button>
-        <button type="button" onClick={onCancel} className="cancel-btn">
-          Cancel
-        </button>
+        </form>
       </div>
-    </form>
+    </div>
   );
 }
 

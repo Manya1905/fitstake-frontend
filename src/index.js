@@ -28,7 +28,7 @@ root.render(
         loginMethods: ['email'],
         appearance: {
           theme: 'light',
-          accentColor: '#b2dfdb',
+          accentColor: '#e88fa0',
         },
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
@@ -75,14 +75,17 @@ root.render(
         <App />
       </SmartWalletsProvider>
       <Toaster
-        position="bottom-right"
+        position="bottom-center"
+        containerStyle={{ bottom: 80 }}
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'rgba(255, 255, 255, 0.95)',
-            color: '#37474f',
-            borderRadius: '15px',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
+            fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
+            background: 'rgba(255, 255, 255, 0.97)',
+            color: '#2d2b2a',
+            borderRadius: '14px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+            fontSize: '14px',
           },
         }}
       />
