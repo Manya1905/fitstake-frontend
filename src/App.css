@@ -1609,3 +1609,57 @@ body {
   display: block;
 }
 
+/* ============================================================
+   DESKTOP: Larger text for laptop/desktop screens
+   ============================================================ */
+@media (min-width: 768px) {
+  .App {
+    max-width: 520px;
+  }
+
+  body {
+    font-size: 16px;
+  }
+
+  .card-title    { font-size: 17px; }
+  .card-subtitle { font-size: 14px; }
+  .card-muted    { font-size: 14px; }
+
+  .btn { font-size: 16px; padding: 14px; }
+  .btn-sm { font-size: 14px; padding: 10px 14px; }
+
+  .badge { font-size: 12px; padding: 4px 10px; }
+
+  .nav-title { font-size: 17px; }
+  .wordmark { font-size: 18px; }
+
+  .section-label { font-size: 14px; }
+  .form-label { font-size: 14px; }
+  .form-input { font-size: 15px; padding: 12px 14px; }
+  .form-textarea { font-size: 15px; padding: 12px 14px; }
+  .form-hint { font-size: 13px; }
+
+  .landing-title { font-size: 30px; }
+  .landing-subtitle { font-size: 16px; }
+
+  .stat-card .stat-number { font-size: 22px; }
+  .stat-card .stat-label { font-size: 13px; }
+
+  .history-title { font-size: 15px; }
+  .history-gain, .history-loss { font-size: 14px; }
+  .history-detail { font-size: 13px; }
+
+  .profile-name { font-size: 17px; }
+  .profile-wallet-sm { font-size: 13px; }
+
+  .empty-title { font-size: 17px; }
+  .empty-body { font-size: 14px; }
+
+  .roster-address { font-size: 14px; }
+  .roster-sub { font-size: 13px; }
+
+  .pill { font-size: 13px; }
+
+  .bnav-label { font-size: 11px; }
+}
+
