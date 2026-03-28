@@ -34,7 +34,7 @@ function FundWallet({ address }) {
       </p>
       <div className="wallet-address-row">
         <code className="wallet-address-sm">{address}</code>
-        <button className="btn btn-neutral btn-sm" onClick={handleCopy}>
+        <button className="btn btn-neutral btn-sm" onClick={handleCopy} style={{ width: 'auto', flexShrink: 0 }}>
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
