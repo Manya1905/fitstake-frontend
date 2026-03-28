@@ -194,16 +194,16 @@ function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
           {isPrivate && (
             <div className="form-group">
               <label className="form-label">Invite Code (optional)</label>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input
                   className="form-input"
                   type="text"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   placeholder="e.g., ABC12345"
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, marginBottom: 0 }}
                 />
-                <button type="button" onClick={generateCode} className="btn btn-neutral btn-sm">
+                <button type="button" onClick={generateCode} className="btn btn-neutral btn-sm" style={{ width: 'auto', flexShrink: 0 }}>
                   Generate
                 </button>
               </div>
