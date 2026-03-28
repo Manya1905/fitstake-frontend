@@ -147,7 +147,7 @@ function App() {
 
   // Challenge filtering for tabs
   const activeChallenges = challenges.filter((c) => c.hasJoined && !c.isDistributed);
-  const exploreChallenges = challenges.filter((c) => !c.hasJoined && !c.isPrivate && c.phase === Phase.Joining);
+  const exploreChallenges = challenges.filter((c) => !c.hasJoined && c.phase === Phase.Joining);
 
   // Handlers with transaction overlay
   const handleJoin = async (challengeId, stakeAmount) => {
