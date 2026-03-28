@@ -96,27 +96,25 @@ function CreateChallengeForm({ onCreateChallenge, onCreated, onCancel }) {
             />
           </div>
 
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label">Join Deadline</label>
-              <input
-                className="form-input"
-                type="datetime-local"
-                value={joinDeadline}
-                onChange={(e) => setJoinDeadline(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Activity Deadline</label>
-              <input
-                className="form-input"
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Join Deadline</label>
+            <input
+              className="form-input"
+              type="datetime-local"
+              value={joinDeadline}
+              onChange={(e) => setJoinDeadline(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Activity Deadline</label>
+            <input
+              className="form-input"
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              required
+            />
           </div>
 
           <div className="form-group">

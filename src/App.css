@@ -1481,10 +1481,23 @@ body {
   grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   overflow: hidden;
+  align-items: start;
 }
 
 .form-grid-3 > * {
   min-width: 0;
+}
+
+.form-grid-3 .form-label {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.form-grid-3 .form-input {
+  font-size: 16px;
+  padding: 10px 8px;
+  text-align: center;
 }
 
 /* Form hint text */
