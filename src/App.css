@@ -362,7 +362,7 @@ body {
    ============================================================ */
 .wallet-address {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 0.02em;
@@ -372,9 +372,14 @@ body {
 
 .wallet-address-sm {
   font-family: var(--font-mono);
-  font-size: 17px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 /* ============================================================
@@ -1540,6 +1545,8 @@ body {
   background: rgba(0, 0, 0, 0.03);
   border-radius: var(--radius-input);
   padding: 10px 13px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Media upload grid (3-slot) */
