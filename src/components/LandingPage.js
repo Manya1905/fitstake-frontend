@@ -25,7 +25,7 @@ function LandingPage({ onSignIn }) {
           Stake money on your fitness goals. Submit proof. Let the community vote. Win the pot.
         </p>
         <button className="btn btn-pink mb-24" onClick={onSignIn}>
-          Get started — it's free
+          Get started - it's free
         </button>
 
         <div className="how-it-works-grid">
