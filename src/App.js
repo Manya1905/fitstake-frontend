@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import toast from 'react-hot-toast';
-import { BACKEND_URL, Phase } from './utils/constants';
+import { BACKEND_URL } from './utils/constants';
 import { useContract } from './hooks/useContract';
 import { useSmartContract } from './hooks/useSmartContract';
 import { useFitness } from './hooks/useFitness';
